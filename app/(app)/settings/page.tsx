@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Settings" }
 import { ApiKeysPanel } from "@/components/settings/api-keys-panel"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { ApiKey } from "@/lib/types"

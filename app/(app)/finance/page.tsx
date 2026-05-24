@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Finance" }
 import { EntryForm } from "@/components/finance/entry-form"
 import { Ledger } from "@/components/finance/ledger"
 import { FinanceChart } from "@/components/finance/finance-chart"

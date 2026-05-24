@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Library" }
 import { BookmarksList } from "@/components/bookmarks/bookmarks-list"
 import { ReadingList } from "@/components/bookmarks/reading-list"
 import { BookmarkForm } from "@/components/bookmarks/bookmark-form"

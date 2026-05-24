@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "People & Subs" }
 import { ContactsList } from "@/components/contacts/contacts-list"
 import { ContactForm } from "@/components/contacts/contact-form"
 import { SubscriptionsList } from "@/components/contacts/subscriptions-list"

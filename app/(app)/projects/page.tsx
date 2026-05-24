@@ -1,4 +1,6 @@
 import Link from "next/link"
+
+export const metadata = { title: "Projects" }
 import { createClient } from "@/lib/supabase/server"
 import { ProjectForm } from "@/components/projects/project-form"
 import type { Project, ProductTask } from "@/lib/types"

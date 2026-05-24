@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Wellness" }
 import { WellnessForm } from "@/components/wellness/wellness-form"
 import { WellnessChart } from "@/components/wellness/wellness-chart"
 import { Smile, Moon, Droplets, Activity } from "lucide-react"

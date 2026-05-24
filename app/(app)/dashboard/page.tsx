@@ -8,6 +8,8 @@ import {
 } from "lucide-react"
 import type { JobApplication, FreelanceClient, ProductTask, HabitLog, FinanceEntry, WeeklyReview } from "@/lib/types"
 
+export const metadata = { title: "Dashboard" }
+
 function calcStreak(logs: HabitLog[]): number {
   const sorted = [...logs].sort((a, b) => b.log_date.localeCompare(a.log_date))
   const today = new Date().toISOString().split("T")[0]

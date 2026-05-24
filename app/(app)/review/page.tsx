@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Weekly Review" }
 import { ReviewForm } from "@/components/review/review-form"
 import type { WeeklyReview } from "@/lib/types"
 

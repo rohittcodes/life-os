@@ -1,4 +1,6 @@
 import Link from "next/link"
+
+export const metadata = { title: "Blog" }
 import { createClient } from "@/lib/supabase/server"
 import { Button } from "@/components/ui/button"
 import { BlogPostActions } from "@/components/blog/post-actions"

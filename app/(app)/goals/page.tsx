@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Goals" }
 import { GoalCard } from "@/components/goals/goal-card"
 import { GoalForm } from "@/components/goals/goal-form"
 import type { Goal, GoalMilestone } from "@/lib/types"

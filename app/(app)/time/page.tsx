@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Time Tracker" }
 import { TimerControl } from "@/components/time/timer-control"
 import { TimeChart } from "@/components/time/time-chart"
 import { TimeEntryRow } from "@/components/time/time-entry-row"

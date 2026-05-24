@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Job Hunt" }
 import { JobForm } from "@/components/jobs/job-form"
 import { JobsBoard } from "@/components/jobs/jobs-board"
 import type { JobApplication } from "@/lib/types"

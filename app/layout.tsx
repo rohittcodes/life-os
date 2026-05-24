@@ -9,8 +9,39 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-sans" })
 const fontMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" })
 
 export const metadata: Metadata = {
-  title: "Life OS",
-  description: "Your personal operating system",
+  title: {
+    default: "Life OS",
+    template: "%s · Life OS",
+  },
+  description: "Your personal operating system — habits, finance, goals, projects, and daily notes in one place.",
+  applicationName: "Life OS",
+  keywords: ["productivity", "habit tracker", "finance", "personal dashboard", "goal tracker"],
+  authors: [{ name: "Life OS" }],
+  creator: "Life OS",
+  metadataBase: new URL("https://life-os.app"),
+  openGraph: {
+    type: "website",
+    locale: "en_IN",
+    url: "https://life-os.app",
+    siteName: "Life OS",
+    title: "Life OS — Your personal operating system",
+    description: "Track habits, manage finances, plan goals, and run your life from one beautiful dashboard.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Life OS — Your personal operating system",
+    description: "Track habits, manage finances, plan goals, and run your life from one beautiful dashboard.",
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "Life OS",
+    statusBarStyle: "black-translucent",
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

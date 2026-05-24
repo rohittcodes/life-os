@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Habits" }
 import { HabitChecker } from "@/components/habits/habit-checker"
 import { StreakCalendar } from "@/components/habits/streak-calendar"
 import { AddHabitForm } from "@/components/habits/add-habit-form"

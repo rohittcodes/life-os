@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Daily Notes" }
 import { DailyNoteEditor } from "@/components/notes/daily-note-editor"
 import { DatePickerNav } from "@/components/notes/date-picker-nav"
 import Link from "next/link"

@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Morning Routine" }
 import { RoutineChecklist } from "@/components/routine/routine-checklist"
 import type { RoutineItem, RoutineLog } from "@/lib/types"
 

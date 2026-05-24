@@ -1,4 +1,6 @@
 import Link from "next/link"
+
+export const metadata = { title: "Knowledge Base" }
 import { createClient } from "@/lib/supabase/server"
 import { KnowledgeActions } from "@/components/knowledge/knowledge-actions"
 import type { KnowledgeArticle } from "@/lib/types"

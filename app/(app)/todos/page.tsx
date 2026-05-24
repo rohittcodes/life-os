@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "To-Do" }
 import { TodoList } from "@/components/todos/todo-list"
 import type { Todo } from "@/lib/types"
 

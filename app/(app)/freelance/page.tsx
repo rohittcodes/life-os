@@ -1,4 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
+
+export const metadata = { title: "Freelance" }
 import { ClientForm } from "@/components/freelance/client-form"
 import { ClientList } from "@/components/freelance/client-list"
 import type { FreelanceClient } from "@/lib/types"
