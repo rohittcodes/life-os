@@ -30,7 +30,7 @@ export default async function FreelancePage() {
   )
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Freelance</h1>
@@ -39,7 +39,7 @@ export default async function FreelancePage() {
         <ClientForm />
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Active projects", value: active.length },
           { label: "Unpaid", value: `₹${unpaidTotal.toLocaleString("en-IN")}` },

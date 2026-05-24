@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Project, TimeEntry } from "@/lib/types"
-import { Play, Square } from "lucide-react"
+import { Play, Square, Loader2 } from "lucide-react"
 
 interface Props {
   projects: Project[]
@@ -23,7 +23,7 @@ function formatElapsed(startedAt: string): string {
 }
 
 export function TimerControl({ projects, running }: Props) {
-  const [, startTransition] = useTransition()
+  const [isPending, startTransition] = useTransition()
   const [description, setDescription] = useState("")
   const [projectId, setProjectId] = useState("none")
   const [tag, setTag] = useState("")
@@ -42,26 +42,30 @@ export function TimerControl({ projects, running }: Props) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-card p-5 space-y-4">
+    <div className="rounded-xl border border-border bg-card p-4 md:p-5 space-y-4">
       {running ? (
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm font-medium">{running.description}</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{running.description || "Untitled session"}</p>
             <p className="text-xs text-muted-foreground">{running.tag ?? "No tag"}</p>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 shrink-0">
             <span className="font-mono text-3xl font-bold tabular-nums">{elapsed}</span>
             <Button
               variant="destructive"
               size="sm"
+              disabled={isPending}
               onClick={() => startTransition(() => stopTimer(running.id))}
             >
-              <Square className="h-4 w-4 mr-1" />Stop
+              {isPending
+                ? <Loader2 className="h-4 w-4 animate-spin" />
+                : <><Square className="h-4 w-4 mr-1" />Stop</>
+              }
             </Button>
           </div>
         </div>
       ) : (
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -69,28 +73,30 @@ export function TimerControl({ projects, running }: Props) {
             className="flex-1"
             onKeyDown={(e) => { if (e.key === "Enter") handleStart() }}
           />
-          {projects.length > 0 && (
-            <Select value={projectId} onValueChange={setProjectId}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="No project" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No project</SelectItem>
-                {projects.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-          <Input
-            value={tag}
-            onChange={(e) => setTag(e.target.value)}
-            placeholder="Tag"
-            className="w-24"
-          />
-          <Button onClick={handleStart}>
-            <Play className="h-4 w-4 mr-1" />Start
-          </Button>
+          <div className="flex gap-2">
+            {projects.length > 0 && (
+              <Select value={projectId} onValueChange={setProjectId}>
+                <SelectTrigger className="h-9 flex-1 sm:w-40 sm:flex-none">
+                  <SelectValue placeholder="No project" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No project</SelectItem>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+            <Input
+              value={tag}
+              onChange={(e) => setTag(e.target.value)}
+              placeholder="Tag"
+              className="w-20 sm:w-24"
+            />
+            <Button onClick={handleStart} disabled={isPending}>
+              <Play className="h-4 w-4 mr-1" />Start
+            </Button>
+          </div>
         </div>
       )}
     </div>

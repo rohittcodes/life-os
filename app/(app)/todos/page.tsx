@@ -24,7 +24,7 @@ export default async function TodosPage() {
   const overdue = allTodos.filter((t) => !t.done && t.due_date && t.due_date < today).length
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold">To-Do</h1>

@@ -32,7 +32,7 @@ export default async function GoalsPage() {
   const completed = allGoals.filter((g) => g.status === "completed")
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Goals</h1>

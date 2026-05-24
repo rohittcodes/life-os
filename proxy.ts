@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 
-const PUBLIC_PATHS = ["/login", "/auth", "/p/", "/api/blog", "/manifest.webmanifest", "/icon", "/apple-icon", "/opengraph-image"]
+const PUBLIC_PATHS = ["/login", "/auth", "/p/", "/api/blog", "/manifest.webmanifest", "/icon", "/apple-icon", "/opengraph-image", "/icon-192", "/icon-512"]
+// Note: /api/ai/chat is NOT public — requires auth checked inside route
 
 function isPublicPath(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p))

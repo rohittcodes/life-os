@@ -28,7 +28,7 @@ export default async function ProjectPage({ params }: Props) {
   if (!milestones.includes("Backlog")) milestones.push("Backlog")
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center gap-4">
         <span
           className="flex h-12 w-12 items-center justify-center rounded-xl text-2xl shrink-0"
@@ -55,7 +55,7 @@ export default async function ProjectPage({ params }: Props) {
         />
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Total", value: total },
           { label: "In progress", value: inProgress },

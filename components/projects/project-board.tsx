@@ -25,13 +25,13 @@ interface Props {
 export function ProjectBoard({ project, tasks, milestones }: Props) {
   const [, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
-  const [milestone, setMilestone] = useState("")
+  const [milestone, setMilestone] = useState("none")
   const [priority, setPriority] = useState("2")
 
   function handleAddTask(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
-    fd.set("milestone", milestone)
+    fd.set("milestone", milestone === "none" ? "" : milestone)
     fd.set("priority", priority)
     formRef.current?.reset()
     startTransition(() => addTask(project.id, fd))
@@ -39,40 +39,42 @@ export function ProjectBoard({ project, tasks, milestones }: Props) {
 
   return (
     <div className="space-y-8">
-      <form ref={formRef} onSubmit={handleAddTask} className="flex gap-2 rounded-xl border border-border bg-card p-4">
+      <form ref={formRef} onSubmit={handleAddTask} className="flex flex-col gap-2 rounded-xl border border-border bg-card p-4 sm:flex-row">
         <input
           name="title"
           required
           placeholder="Add a task…"
-          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+          className="flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground min-w-0"
         />
-        <Select value={milestone} onValueChange={setMilestone}>
-          <SelectTrigger className="h-8 w-36 text-xs">
-            <SelectValue placeholder="Milestone" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">No milestone</SelectItem>
-            {milestones.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-            <SelectItem value="Backlog">Backlog</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={priority} onValueChange={setPriority}>
-          <SelectTrigger className="h-8 w-24 text-xs">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="1">P1 — Critical</SelectItem>
-            <SelectItem value="2">P2 — Normal</SelectItem>
-            <SelectItem value="3">P3 — Low</SelectItem>
-          </SelectContent>
-        </Select>
-        <button
-          type="submit"
-          className="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90"
-          style={{ backgroundColor: project.color }}
-        >
-          Add
-        </button>
+        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
+          <Select value={milestone} onValueChange={setMilestone}>
+            <SelectTrigger className="h-8 flex-1 sm:w-36 sm:flex-none text-xs">
+              <SelectValue placeholder="Milestone" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No milestone</SelectItem>
+              {milestones.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+              <SelectItem value="Backlog">Backlog</SelectItem>
+            </SelectContent>
+          </Select>
+          <Select value={priority} onValueChange={setPriority}>
+            <SelectTrigger className="h-8 w-28 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">P1 — Critical</SelectItem>
+              <SelectItem value="2">P2 — Normal</SelectItem>
+              <SelectItem value="3">P3 — Low</SelectItem>
+            </SelectContent>
+          </Select>
+          <button
+            type="submit"
+            className="rounded-lg px-3 py-1.5 text-xs font-medium text-white transition-colors hover:opacity-90 shrink-0"
+            style={{ backgroundColor: project.color }}
+          >
+            Add
+          </button>
+        </div>
       </form>
 
       <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">

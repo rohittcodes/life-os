@@ -66,7 +66,7 @@ export default async function HabitsPage() {
   ]
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-4 md:p-6">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Daily Habits</h1>

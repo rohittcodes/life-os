@@ -41,7 +41,7 @@ export default async function TimePage() {
     .reduce((s, e) => s + (e.duration_minutes ?? 0), 0)
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div>
         <h1 className="text-2xl font-semibold">Time Tracker</h1>
         <p className="text-sm text-muted-foreground">Track focus sessions across projects</p>

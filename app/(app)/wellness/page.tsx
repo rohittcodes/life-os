@@ -38,13 +38,13 @@ export default async function WellnessPage() {
     : null
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div>
         <h1 className="text-2xl font-semibold">Wellness</h1>
         <p className="text-sm text-muted-foreground">Track mood, sleep, hydration, and energy daily</p>
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           {
             label: "Avg mood (30d)", icon: Smile,

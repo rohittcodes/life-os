@@ -55,7 +55,7 @@ export default async function FinancePage() {
     })
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Finance</h1>
@@ -64,7 +64,7 @@ export default async function FinancePage() {
         <EntryForm />
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: `${monthName} income`, value: `₹${monthIncome.toLocaleString("en-IN")}`, positive: true },
           { label: `${monthName} expenses`, value: `₹${monthExpense.toLocaleString("en-IN")}` },

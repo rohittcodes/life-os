@@ -26,7 +26,7 @@ export default async function ProductPage() {
   if (!activeMilestones.includes("Backlog")) activeMilestones.push("Backlog")
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Projects</h1>
@@ -35,7 +35,7 @@ export default async function ProductPage() {
         <TaskForm />
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Total tasks", value: total },
           { label: "In progress", value: inProgress },

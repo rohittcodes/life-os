@@ -48,7 +48,7 @@ export function SprintBoard({ tasks, milestone }: SprintBoardProps) {
         </div>
         <span className="text-xs text-muted-foreground shrink-0">{done}/{filtered.length}</span>
       </div>
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {columns.map((col) => {
           const colTasks = filtered.filter((t) => t.status === col.status)
           return (

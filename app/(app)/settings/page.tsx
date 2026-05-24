@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server"
 
 export const metadata = { title: "Settings" }
 import { ApiKeysPanel } from "@/components/settings/api-keys-panel"
+import { AiSettings } from "@/components/settings/ai-settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { ApiKey } from "@/lib/types"
 
@@ -9,24 +10,36 @@ export default async function SettingsPage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  const { data: keys = [] } = await supabase
-    .from("api_keys")
-    .select("*")
-    .eq("user_id", user!.id)
-    .order("created_at", { ascending: false })
+  const [{ data: keys = [] }, { data: profile }] = await Promise.all([
+    supabase.from("api_keys").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }),
+    supabase.from("user_profiles").select("ai_provider, ai_anthropic_key, ai_openai_key, ai_gemini_key, ai_groq_key").eq("id", user!.id).single(),
+  ])
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div>
         <h1 className="text-2xl font-semibold">Settings</h1>
         <p className="text-sm text-muted-foreground">Account, API access, and preferences</p>
       </div>
 
-      <Tabs defaultValue="api">
+      <Tabs defaultValue="ai">
         <TabsList>
+          <TabsTrigger value="ai">AI Assistant</TabsTrigger>
           <TabsTrigger value="api">API Keys</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="ai" className="mt-6">
+          <AiSettings
+            provider={profile?.ai_provider ?? "anthropic"}
+            savedKeys={{
+              anthropic: !!profile?.ai_anthropic_key,
+              openai: !!profile?.ai_openai_key,
+              gemini: !!profile?.ai_gemini_key,
+              groq: !!profile?.ai_groq_key,
+            }}
+          />
+        </TabsContent>
 
         <TabsContent value="api" className="mt-6 space-y-4">
           <div className="space-y-1">

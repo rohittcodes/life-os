@@ -41,7 +41,7 @@ export default async function RoutinePage() {
   const dateLabel = new Date().toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Morning Routine</h1>

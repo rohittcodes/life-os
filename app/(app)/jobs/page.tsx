@@ -25,7 +25,7 @@ export default async function JobsPage() {
   const weeklyCount = jobs?.filter((j: JobApplication) => new Date(j.applied_at) >= thisWeek).length ?? 0
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Job Hunt</h1>
@@ -34,7 +34,7 @@ export default async function JobsPage() {
         <JobForm />
       </div>
 
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Total applied", value: total },
           { label: "This week", value: weeklyCount },

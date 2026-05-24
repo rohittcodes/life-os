@@ -45,7 +45,7 @@ export default async function NotesPage({ searchParams }: Props) {
   const noteDates = new Set((recentNotes ?? []).map((n: { note_date: string }) => n.note_date))
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Daily Notes</h1>

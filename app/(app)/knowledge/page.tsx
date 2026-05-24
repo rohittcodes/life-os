@@ -24,7 +24,7 @@ export default async function KnowledgePage({ searchParams }: Props) {
   const rest = allArticles.filter((a) => !a.pinned)
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Knowledge Base</h1>
