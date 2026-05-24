@@ -77,7 +77,7 @@ export function JobForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" name="notes" placeholder="Recruiter contact, referral..." rows={2} />
+            <Textarea id="notes" name="notes" placeholder="Recruiter contact, referral, interview task, follow-up..." rows={2} />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>

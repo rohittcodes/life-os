@@ -18,7 +18,6 @@ export default function Icon() {
           justifyContent: "center",
         }}
       >
-        {/* Grid of 4 dots — represents a dashboard/OS */}
         <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
           <div style={{ display: "flex", gap: 4 }}>
             <div style={{ width: 7, height: 7, background: "white", borderRadius: 2 }} />

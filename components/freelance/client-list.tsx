@@ -27,7 +27,7 @@ export function ClientList({ clients }: { clients: FreelanceClient[] }) {
   if (clients.length === 0) {
     return (
       <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
-        No clients yet — add your first project
+        No work items yet — add your first lead, project, or task
       </div>
     )
   }

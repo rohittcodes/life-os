@@ -28,11 +28,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <AppSidebar />
         <SidebarInset>
           {/* Header — NOT sticky; scroll is contained inside <main> below */}
-          <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border/60 bg-background px-4">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background px-5">
             <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
-            <Separator orientation="vertical" className="mr-1 h-4 opacity-40" />
+            <Separator orientation="vertical" className="mr-1 h-5 opacity-40" />
             <div className="ml-auto lg:hidden">
-              <ThemeToggle className="h-8 w-8" />
+              <ThemeToggle className="h-9 w-9" />
             </div>
           </header>
 

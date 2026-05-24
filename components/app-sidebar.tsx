@@ -40,9 +40,9 @@ const dailyNav = [
 
 // Work — plain group (no collapsible at the group level)
 const workNav = [
-  { href: "/jobs",      label: "Job Hunt",      icon: Briefcase },
-  { href: "/freelance", label: "Freelance",      icon: Users },
-  { href: "/projects",  label: "Projects",       icon: FolderKanban },
+  { href: "/jobs",      label: "Jobs",           icon: Briefcase },
+  { href: "/freelance", label: "Work Pipeline",  icon: Users },
+  { href: "/projects",  label: "Work Tasks",     icon: FolderKanban },
   { href: "/time",      label: "Time Tracker",   icon: Timer },
 ]
 

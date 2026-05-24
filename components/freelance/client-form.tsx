@@ -31,16 +31,16 @@ export function ClientForm() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>Add client</Button>
+        <Button>Add work item</Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>New client / project</DialogTitle>
+          <DialogTitle>New work item</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="client_name">Client name</Label>
+              <Label htmlFor="client_name">Company / client</Label>
               <Input id="client_name" name="client_name" required placeholder="Acme Corp" />
             </div>
             <div className="space-y-1.5">
@@ -60,8 +60,8 @@ export function ClientForm() {
             </div>
           </div>
           <div className="space-y-1.5">
-            <Label htmlFor="project">Project</Label>
-            <Input id="project" name="project" required placeholder="Landing page redesign" />
+            <Label htmlFor="project">Work / project</Label>
+            <Input id="project" name="project" required placeholder="Take-home task, redesign, contract work" />
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
@@ -91,7 +91,7 @@ export function ClientForm() {
           </div>
           <div className="space-y-1.5">
             <Label htmlFor="notes">Notes</Label>
-            <Textarea id="notes" name="notes" rows={2} placeholder="Contract details, contacts..." />
+            <Textarea id="notes" name="notes" rows={2} placeholder="Recruiter/client contact, contract details, next steps..." />
           </div>
           <div className="flex justify-end gap-2 pt-1">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>

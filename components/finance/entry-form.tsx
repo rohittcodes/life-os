@@ -11,6 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const incomeCategories = ["salary", "freelance", "other"]
 const expenseCategories = ["food", "transport", "subscriptions", "learning", "misc"]
+const categoryLabels: Record<string, string> = {
+  freelance: "Contract work",
+}
 
 export function EntryForm() {
   const [open, setOpen] = useState(false)
@@ -69,7 +72,7 @@ export function EntryForm() {
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((c) => (
-                    <SelectItem key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
+                    <SelectItem key={c} value={c}>{categoryLabels[c] ?? c.charAt(0).toUpperCase() + c.slice(1)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

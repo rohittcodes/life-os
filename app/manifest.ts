@@ -21,27 +21,25 @@ export default function manifest(): MetadataRoute.Manifest {
       { src: "/icon-192", sizes: "192x192", type: "image/png", purpose: "maskable" },
       { src: "/icon-512", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icon-512", sizes: "512x512", type: "image/png", purpose: "maskable" },
-      { src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
-      { src: "/icons/maskable-icon.svg", sizes: "any", type: "image/svg+xml", purpose: "maskable" },
     ],
     shortcuts: [
       {
         name: "Dashboard",
         short_name: "Dashboard",
         url: "/dashboard",
-        icons: [{ src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml" }],
+        icons: [{ src: "/icon-192", sizes: "192x192", type: "image/png" }],
       },
       {
         name: "Habits",
         short_name: "Habits",
         url: "/habits",
-        icons: [{ src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml" }],
+        icons: [{ src: "/icon-192", sizes: "192x192", type: "image/png" }],
       },
       {
         name: "Notes",
         short_name: "Notes",
         url: "/notes",
-        icons: [{ src: "/icons/icon.svg", sizes: "any", type: "image/svg+xml" }],
+        icons: [{ src: "/icon-192", sizes: "192x192", type: "image/png" }],
       },
     ],
   }

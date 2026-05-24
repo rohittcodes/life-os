@@ -27,6 +27,7 @@ export function ProjectBoard({ project, tasks, milestones }: Props) {
   const formRef = useRef<HTMLFormElement>(null)
   const [milestone, setMilestone] = useState("none")
   const [priority, setPriority] = useState("2")
+  const milestoneOptions = Array.from(new Set([...milestones, "Backlog"].filter(Boolean)))
 
   function handleAddTask(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -53,8 +54,7 @@ export function ProjectBoard({ project, tasks, milestones }: Props) {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="none">No milestone</SelectItem>
-              {milestones.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
-              <SelectItem value="Backlog">Backlog</SelectItem>
+              {milestoneOptions.map((m) => <SelectItem key={`milestone-${m}`} value={m}>{m}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={priority} onValueChange={setPriority}>

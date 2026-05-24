@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 
-export const metadata = { title: "Freelance" }
+export const metadata = { title: "Work Pipeline" }
 import { ClientForm } from "@/components/freelance/client-form"
 import { ClientList } from "@/components/freelance/client-list"
 import type { FreelanceClient } from "@/lib/types"
@@ -33,15 +33,15 @@ export default async function FreelancePage() {
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Freelance</h1>
-          <p className="text-sm text-muted-foreground">Clients, deadlines, and what you're owed</p>
+          <h1 className="text-2xl font-semibold">Work Pipeline</h1>
+          <p className="text-sm text-muted-foreground">Job search tasks, client projects, deadlines, and payments</p>
         </div>
         <ClientForm />
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Active projects", value: active.length },
+          { label: "Active work", value: active.length },
           { label: "Unpaid", value: `₹${unpaidTotal.toLocaleString("en-IN")}` },
           { label: "This month", value: `₹${thisMonthIncome.toLocaleString("en-IN")}` },
           { label: "Overdue", value: overdueDeadlines.length, warn: overdueDeadlines.length > 0 },

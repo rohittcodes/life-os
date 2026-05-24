@@ -34,7 +34,9 @@ export default async function DashboardPage() {
   const today = new Date().toISOString().split("T")[0]
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]
-  const sevenAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
+  const sevenDaysAgo = new Date(now)
+  sevenDaysAgo.setDate(now.getDate() - 7)
+  const sevenAgo = sevenDaysAgo.toISOString().split("T")[0]
 
   const [
     { data: jobs },
@@ -74,7 +76,7 @@ export default async function DashboardPage() {
   const sprintProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0
   const monthIncome = allEntries.filter((e) => e.type === "income").reduce((s, e) => s + e.amount, 0)
   const monthExpense = allEntries.filter((e) => e.type === "expense").reduce((s, e) => s + e.amount, 0)
-  const activeClients = allClients.filter((c) => c.status === "active")
+  const activeWorkItems = allClients.filter((c) => c.status === "active")
   const pendingTodosCount = (todosPending ?? []).filter((t) => !t.done).length
   const overdueCount = (todosPending ?? []).filter((t) => !t.done && t.due_date && t.due_date < today).length
   const activeGoals = (goalStats ?? []).filter((g) => g.status === "active").length
@@ -186,7 +188,7 @@ export default async function DashboardPage() {
       {/* Secondary stats row */}
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: "Active clients", value: activeClients.length, href: "/freelance", icon: Users },
+          { label: "Active work", value: activeWorkItems.length, href: "/freelance", icon: Users },
           { label: "Active goals", value: activeGoals, href: "/goals", icon: Target },
           { label: "Monthly expenses", value: `₹${(monthExpense / 1000).toFixed(0)}k`, href: "/finance", icon: TrendingDown },
           { label: "Weekly review", value: latestReview ? "Done" : "Pending", href: "/review", icon: Clock },
@@ -208,7 +210,7 @@ export default async function DashboardPage() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-blue-500" />
-              <h3 className="text-sm font-medium">Job Hunt</h3>
+              <h3 className="text-sm font-medium">Jobs</h3>
             </div>
             <span className="text-xs text-muted-foreground">{allJobs.length} total</span>
           </div>
@@ -223,17 +225,17 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        {/* Freelance */}
+        {/* Work pipeline */}
         <Link href="/freelance" className="group rounded-xl border border-border bg-card p-4 hover:border-foreground/20 transition-colors">
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-green-500" />
-              <h3 className="text-sm font-medium">Freelance</h3>
+              <h3 className="text-sm font-medium">Work Pipeline</h3>
             </div>
-            <span className="text-xs text-muted-foreground">{activeClients.length} active</span>
+            <span className="text-xs text-muted-foreground">{activeWorkItems.length} active</span>
           </div>
           <div className="space-y-1.5">
-            {activeClients.slice(0, 3).map((c) => (
+            {activeWorkItems.slice(0, 3).map((c) => (
               <div key={c.id} className="flex items-center justify-between text-xs">
                 <span className="truncate font-medium">{c.client_name}</span>
                 <span className="shrink-0 ml-2 text-muted-foreground">
@@ -241,7 +243,7 @@ export default async function DashboardPage() {
                 </span>
               </div>
             ))}
-            {activeClients.length === 0 && <p className="text-xs text-muted-foreground">No active clients</p>}
+            {activeWorkItems.length === 0 && <p className="text-xs text-muted-foreground">No active work items</p>}
           </div>
         </Link>
 
@@ -250,7 +252,7 @@ export default async function DashboardPage() {
           <div className="mb-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FolderKanban className="h-4 w-4 text-purple-500" />
-              <h3 className="text-sm font-medium">Projects</h3>
+              <h3 className="text-sm font-medium">Work Tasks</h3>
             </div>
             <span className="text-xs text-muted-foreground">{sprintProgress}% done</span>
           </div>

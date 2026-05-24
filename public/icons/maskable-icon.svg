@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Life OS">
-  <rect width="512" height="512" fill="#0a0a0a"/>
-  <circle cx="256" cy="256" r="170" fill="#171717"/>
-  <path d="M142 340V172h52v122h88v46H142Z" fill="#fafafa"/>
-  <path d="M327 344c-40 0-69-29-69-70v-36c0-41 29-70 69-70s69 29 69 70v36c0 41-29 70-69 70Zm0-47c11 0 18-8 18-24v-34c0-16-7-24-18-24s-18 8-18 24v34c0 16 7 24 18 24Z" fill="#fafafa"/>
-  <circle cx="394" cy="124" r="25" fill="#fb923c"/>
-</svg>

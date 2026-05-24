@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 
-export const metadata = { title: "Job Hunt" }
+export const metadata = { title: "Jobs" }
 import { JobForm } from "@/components/jobs/job-form"
 import { JobsBoard } from "@/components/jobs/jobs-board"
 import type { JobApplication } from "@/lib/types"
@@ -28,8 +28,8 @@ export default async function JobsPage() {
     <div className="space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">Job Hunt</h1>
-          <p className="text-sm text-muted-foreground">Track every application to offer or rejection</p>
+          <h1 className="text-2xl font-semibold">Jobs</h1>
+          <p className="text-sm text-muted-foreground">Track applications, follow-ups, interview tasks, and offers</p>
         </div>
         <JobForm />
       </div>

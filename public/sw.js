@@ -1,5 +1,5 @@
 const CACHE_NAME = "life-os-v2";
-const APP_SHELL = ["/offline", "/manifest.webmanifest", "/icons/icon.svg", "/icons/maskable-icon.svg"];
+const APP_SHELL = ["/offline", "/manifest.webmanifest", "/icon-192", "/icon-512"];
 
 function shouldBypassCache(request) {
   const url = new URL(request.url);
@@ -67,8 +67,8 @@ self.addEventListener("message", (event) => {
     event.waitUntil(
       self.registration.showNotification("Life OS notifications are on", {
         body: "You will be able to receive reminders from Life OS.",
-        icon: "/icons/icon.svg",
-        badge: "/icons/maskable-icon.svg",
+        icon: "/icon-192",
+        badge: "/icon",
         tag: "life-os-test",
         data: { url: "/dashboard" },
       })
@@ -80,8 +80,8 @@ self.addEventListener("message", (event) => {
     event.waitUntil(
       self.registration.showNotification(reminder.title || "Life OS reminder", {
         body: reminder.body || "Open Life OS and complete the pending item.",
-        icon: "/icons/icon.svg",
-        badge: "/icons/maskable-icon.svg",
+        icon: "/icon-192",
+        badge: "/icon",
         tag: reminder.id || "life-os-reminder",
         renotify: true,
         requireInteraction: !!event.data.requireInteraction,
@@ -105,8 +105,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(payload.title || fallback.title, {
       body: payload.body || fallback.body,
-      icon: payload.icon || "/icons/icon.svg",
-      badge: payload.badge || "/icons/maskable-icon.svg",
+      icon: payload.icon || "/icon-192",
+      badge: payload.badge || "/icon",
       tag: payload.tag || "life-os-reminder",
       data: { url: payload.url || fallback.url },
     })
