@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 export const metadata = { title: "Settings" }
 import { ApiKeysPanel } from "@/components/settings/api-keys-panel"
 import { AiSettings } from "@/components/settings/ai-settings"
+import { PwaSettings } from "@/components/settings/pwa-settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { ApiKey } from "@/lib/types"
 
@@ -25,6 +26,7 @@ export default async function SettingsPage() {
       <Tabs defaultValue="ai">
         <TabsList>
           <TabsTrigger value="ai">AI Assistant</TabsTrigger>
+          <TabsTrigger value="app">App</TabsTrigger>
           <TabsTrigger value="api">API Keys</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
@@ -39,6 +41,10 @@ export default async function SettingsPage() {
               groq: !!profile?.ai_groq_key,
             }}
           />
+        </TabsContent>
+
+        <TabsContent value="app" className="mt-6">
+          <PwaSettings />
         </TabsContent>
 
         <TabsContent value="api" className="mt-6 space-y-4">

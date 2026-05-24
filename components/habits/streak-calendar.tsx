@@ -55,9 +55,9 @@ export function StreakCalendar({ logs }: StreakCalendarProps) {
           </span>
         </div>
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="mx-auto grid w-full max-w-[22rem] grid-cols-7 gap-0.5">
         {["Su","Mo","Tu","We","Th","Fr","Sa"].map((d) => (
-          <div key={d} className="text-center text-xs text-muted-foreground py-1">{d}</div>
+          <div key={d} className="py-0.5 text-center text-[10px] text-muted-foreground">{d}</div>
         ))}
         {cells.map((d, i) =>
           d === null ? (
@@ -66,7 +66,7 @@ export function StreakCalendar({ logs }: StreakCalendarProps) {
             <div
               key={d}
               title={dateStr(d)}
-              className={`relative flex aspect-square items-center justify-center rounded-md text-xs font-medium transition-colors ${completionColor(logMap.get(dateStr(d)))} ${
+              className={`relative flex aspect-square items-center justify-center rounded-md text-[10px] font-medium transition-colors ${completionColor(logMap.get(dateStr(d)))} ${
                 d === today.getDate() ? "ring-2 ring-ring ring-offset-1 ring-offset-background" : ""
               } ${logMap.get(dateStr(d)) ? "text-background" : "text-muted-foreground"}`}
             >

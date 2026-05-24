@@ -116,17 +116,19 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6 p-4 md:p-6">
       {/* Header */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{greeting}</h1>
+      <div className="flex items-start">
+        <div className="flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-2xl font-semibold">{greeting}</h1>
+            {streak > 0 && (
+              <div className="flex items-center gap-1.5 rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-1.5">
+                <Flame className="h-4 w-4 text-orange-500" />
+                <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">{streak} day streak</span>
+              </div>
+            )}
+          </div>
           <p className="text-sm text-muted-foreground">{dateStr}</p>
         </div>
-        {streak > 0 && (
-          <div className="flex items-center gap-1.5 rounded-xl border border-orange-500/30 bg-orange-500/10 px-3 py-1.5">
-            <Flame className="h-4 w-4 text-orange-500" />
-            <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">{streak} day streak</span>
-          </div>
-        )}
       </div>
 
       {/* Primary stats — 4 key numbers */}

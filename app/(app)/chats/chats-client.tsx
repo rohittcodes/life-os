@@ -1,7 +1,8 @@
 "use client"
 
 import { useChat } from "@ai-sdk/react"
-import { DefaultChatTransport } from "ai"
+import { DefaultChatTransport, type UIMessage } from "ai"
+import { useRouter } from "next/navigation"
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { DropdownMenu } from "radix-ui"
 import { motion, AnimatePresence } from "motion/react"
@@ -12,6 +13,7 @@ import {
 import ReactMarkdown from "react-markdown"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AgentPanel } from "@/components/ai/agent-panel"
 
 interface Conversation {
@@ -21,6 +23,13 @@ interface Conversation {
   model: string | null
   created_at: string
   updated_at: string
+}
+
+interface ConversationMessage {
+  id?: string
+  role: string
+  content: string
+  parts?: unknown
 }
 
 type Provider = "anthropic" | "openai" | "gemini" | "groq"
@@ -160,7 +169,23 @@ function ModelSelector({
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center rounded-xl border border-border bg-muted/40 p-0.5">
+      <Select value={provider} onValueChange={(value) => onProviderChange(value as Provider)}>
+        <SelectTrigger
+          className="h-7 w-28 text-xs sm:hidden"
+          aria-label="Select AI provider"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {(Object.keys(PROVIDER_LABELS) as Provider[]).map(p => (
+            <SelectItem key={p} value={p}>
+              {PROVIDER_LABELS[p]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <div className="hidden items-center rounded-xl border border-border bg-muted/40 p-0.5 sm:flex">
         {(Object.keys(PROVIDER_LABELS) as Provider[]).map(p => (
           <button
             key={p}
@@ -221,15 +246,36 @@ function ModelSelector({
   )
 }
 
-export function ChatsClient({ initialConversations }: { initialConversations: Conversation[] }) {
+function reconstructMessages(dbMsgs: ConversationMessage[]): UIMessage[] {
+  return (dbMsgs ?? []).map((m) => ({
+    id: m.id ?? crypto.randomUUID(),
+    role: m.role as "user" | "assistant",
+    parts: (Array.isArray(m.parts) ? m.parts : (m.role === "user"
+      ? [{ type: "text", text: m.content }]
+      : [{ type: "text", text: m.content }])) as UIMessage["parts"],
+  }))
+}
+
+export function ChatsClient({
+  initialConversations,
+  initialSelected = null,
+  initialMessages = [],
+}: {
+  initialConversations: Conversation[]
+  initialSelected?: Conversation | null
+  initialMessages?: ConversationMessage[]
+}) {
+  const router = useRouter()
   const [conversations, setConversations] = useState(initialConversations)
   const [deleting, setDeleting] = useState<string | null>(null)
-  const [selected, setSelected] = useState<Conversation | null>(null)
+  const [selected, setSelected] = useState<Conversation | null>(initialSelected)
   const [loadingConversation, setLoadingConversation] = useState(false)
   const [showAgentPanel, setShowAgentPanel] = useState(false)
   const [input, setInput] = useState("")
-  const [provider, setProvider] = useState<Provider>("anthropic")
-  const [modelId, setModelId] = useState<string>(DEFAULT_MODELS.anthropic)
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const initialProvider = ((initialSelected?.provider as Provider | undefined) ?? "anthropic")
+  const [provider, setProvider] = useState<Provider>(initialProvider)
+  const [modelId, setModelId] = useState<string>(initialSelected?.model ?? DEFAULT_MODELS[initialProvider])
 
   const transport = useMemo(
     () => new DefaultChatTransport({
@@ -242,6 +288,16 @@ export function ChatsClient({ initialConversations }: { initialConversations: Co
   const { messages, sendMessage, status, error, setMessages } = useChat({ transport })
   const isLoading = status === "streaming" || status === "submitted"
 
+  useEffect(() => {
+    if (!initialSelected) return
+    setMessages(reconstructMessages(initialMessages))
+  }, [initialSelected, initialMessages, setMessages])
+
+  useEffect(() => {
+    if (!selected) return
+    bottomRef.current?.scrollIntoView({ behavior: "auto", block: "end" })
+  }, [selected, messages.length, isLoading])
+
   async function deleteConversation(id: string) {
     setDeleting(id)
     try {
@@ -250,37 +306,17 @@ export function ChatsClient({ initialConversations }: { initialConversations: Co
       if (selected?.id === id) {
         setSelected(null)
         setMessages([])
+        router.push("/chats")
       }
     } finally {
       setDeleting(null)
     }
   }
 
-  const openConversation = useCallback(async (conv: Conversation) => {
+  const openConversation = useCallback((conv: Conversation) => {
     setLoadingConversation(true)
-    try {
-      const res = await fetch(`/api/ai/conversations/${conv.id}`)
-      if (!res.ok) return
-      const { conversation, messages: dbMsgs } = await res.json()
-
-      const reconstructed = (dbMsgs ?? []).map((m: { id?: string; role: string; content: string; parts?: unknown }) => ({
-        id: m.id ?? crypto.randomUUID(),
-        role: m.role as "user" | "assistant",
-        parts: m.parts ?? (m.role === "user"
-          ? [{ type: "text", text: m.content }]
-          : [{ type: "text", text: m.content }]),
-      }))
-
-      setSelected(conversation)
-      const nextProvider = (conversation.provider as Provider) ?? "anthropic"
-      setProvider(nextProvider)
-      setModelId(conversation.model ?? DEFAULT_MODELS[nextProvider])
-      setMessages(reconstructed)
-      setInput("")
-    } finally {
-      setLoadingConversation(false)
-    }
-  }, [setMessages])
+    router.push(`/chats/${conv.id}`)
+  }, [router])
 
   const saveConversation = useCallback(async (msgs: typeof messages) => {
     if (!selected) return
@@ -301,7 +337,7 @@ export function ChatsClient({ initialConversations }: { initialConversations: Co
         ? { ...c, updated_at: new Date().toISOString(), provider: provider ?? c.provider, model: modelId ?? c.model }
         : c
     )))
-  }, [selected, provider, modelId, messages])
+  }, [selected, provider, modelId])
 
   const prevStatus = useRef(status)
   useEffect(() => {
@@ -341,7 +377,7 @@ export function ChatsClient({ initialConversations }: { initialConversations: Co
       <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_top,_rgba(251,146,60,0.12),_transparent_55%)]" />
 
       <div className={cn(
-        "mx-auto w-full px-4 md:px-6 pt-4",
+        "mx-auto w-full px-4 md:px-6",
         selected ? "max-w-none" : "max-w-3xl"
       )}>
         {!selected && (
@@ -384,15 +420,17 @@ export function ChatsClient({ initialConversations }: { initialConversations: Co
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate leading-snug">{conv.title}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className={cn("flex items-center gap-1 text-xs font-medium capitalize", PROVIDER_COLORS[conv.provider] ?? "text-muted-foreground")}>
-                            <Cpu className="h-3 w-3" />
-                            {conv.provider}
-                          </span>
-                          {conv.model && (
-                            <span className="text-xs text-muted-foreground/70 truncate">{conv.model}</span>
-                          )}
-                          <span className="text-xs text-muted-foreground/50 flex items-center gap-1 ml-auto">
+                        <div className="mt-1 flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-2">
+                          <div className="flex min-w-0 items-center gap-2">
+                            <span className={cn("flex shrink-0 items-center gap-1 text-xs font-medium capitalize", PROVIDER_COLORS[conv.provider] ?? "text-muted-foreground")}>
+                              <Cpu className="h-3 w-3" />
+                              {conv.provider}
+                            </span>
+                            {conv.model && (
+                              <span className="min-w-0 truncate text-xs text-muted-foreground/70">{conv.model}</span>
+                            )}
+                          </div>
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground/50 sm:ml-auto sm:shrink-0">
                             <Calendar className="h-3 w-3" />
                             {new Date(conv.updated_at).toLocaleDateString("en-IN", {
                               day: "numeric",
@@ -433,13 +471,14 @@ export function ChatsClient({ initialConversations }: { initialConversations: Co
 
         {selected && (
           <div className="flex min-h-[87.5vh] w-full flex-col">
-            <div className="flex items-center gap-3 border-b border-border pb-3">
+            <div className="sticky top-0 z-20 flex items-center gap-3 border-b border-border bg-background/95 py-3 backdrop-blur supports-[backdrop-filter]:bg-background/80">
               <button
-                onClick={() => { setSelected(null); setMessages([]) }}
-                className="flex items-center gap-2 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                aria-label="Back to chats"
+                title="Back to chats"
+                onClick={() => { setSelected(null); setMessages([]); router.push("/chats") }}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
               >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                Back
+                <ArrowLeft className="h-5 w-5" />
               </button>
               <div className="min-w-0">
                 <p className="text-sm font-semibold truncate">{selected.title}</p>
@@ -457,7 +496,8 @@ export function ChatsClient({ initialConversations }: { initialConversations: Co
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto py-4 space-y-4">
+            <div className="flex-1 overflow-y-auto py-4">
+              <div className="flex min-h-full flex-col justify-end gap-4">
               {loadingConversation && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -528,6 +568,8 @@ export function ChatsClient({ initialConversations }: { initialConversations: Co
                   {error.message}
                 </div>
               )}
+                <div ref={bottomRef} />
+              </div>
             </div>
 
             <div className="mt-auto py-2 sticky bottom-0 bg-background">

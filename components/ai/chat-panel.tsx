@@ -8,6 +8,7 @@ import {
   Sheet, SheetContent, SheetTitle,
 } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   X, Send, Bot, Loader2, Sparkles, CheckCircle2, AlertCircle,
   XCircle, Brain, ChevronDown, ShieldAlert, SlidersHorizontal,
@@ -331,7 +332,23 @@ function ModelSelector({
 
   return (
     <div className="flex items-center gap-2">
-      <div className="flex items-center rounded-xl border border-border bg-muted/40 p-0.5">
+      <Select value={provider} onValueChange={(value) => onProviderChange(value as Provider)}>
+        <SelectTrigger
+          className="h-7 w-28 text-xs sm:hidden"
+          aria-label="Select AI provider"
+        >
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {(Object.keys(PROVIDER_LABELS) as Provider[]).map(p => (
+            <SelectItem key={p} value={p}>
+              {PROVIDER_LABELS[p]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <div className="hidden items-center rounded-xl border border-border bg-muted/40 p-0.5 sm:flex">
         {(Object.keys(PROVIDER_LABELS) as Provider[]).map(p => (
           <button
             key={p}
@@ -424,7 +441,6 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
       api: "/api/ai/chat",
       body: () => ({ provider: modelRef.current.provider, model: modelRef.current.modelId }),
     }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   )
 
@@ -605,7 +621,7 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
         <SheetContent
           side="right"
           showCloseButton={false}
-          className="flex flex-col p-0 gap-0 w-full data-[side=right]:sm:max-w-lg"
+          className="flex flex-col p-0 gap-0 w-full data-[side=right]:w-full data-[side=right]:sm:max-w-lg"
         >
           <SheetTitle className="sr-only">Life OS AI Assistant</SheetTitle>
 
@@ -664,7 +680,8 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
           </AnimatePresence>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
+          <div className="flex-1 overflow-y-auto p-4 min-h-0">
+            <div className="flex min-h-full flex-col gap-4">
             {!hasApiKey && (
               <div className="flex items-start gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-700 dark:text-yellow-400">
                 <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
@@ -695,6 +712,8 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
                 </div>
               </div>
             )}
+
+            {messages.length > 0 && <div className="mt-auto" />}
 
             <AnimatePresence initial={false}>
               {messages.map((msg) => (
@@ -827,6 +846,7 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
             )}
 
             <div ref={bottomRef} />
+            </div>
           </div>
 
           {/* Composer */}
