@@ -16,6 +16,7 @@ export default async function TodosPage() {
     .order("priority", { ascending: false })
     .order("due_date", { ascending: true, nullsFirst: false })
     .order("created_at")
+    .limit(200)
 
   const allTodos: Todo[] = todos ?? []
   const pending = allTodos.filter((t) => !t.done).length
@@ -47,7 +48,7 @@ export default async function TodosPage() {
         ))}
       </div>
 
-      <TodoList todos={allTodos} />
+      <TodoList initialTodos={allTodos} />
     </div>
   )
 }

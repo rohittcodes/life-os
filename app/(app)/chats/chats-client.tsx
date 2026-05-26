@@ -15,6 +15,10 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { AgentPanel } from "@/components/ai/agent-panel"
+import {
+  type Provider, PROVIDER_LABELS, MODELS, DEFAULT_MODELS,
+  parseThinking, type ParsedSegment,
+} from "@/lib/ai/chat-constants"
 
 interface Conversation {
   id: string
@@ -32,68 +36,11 @@ interface ConversationMessage {
   parts?: unknown
 }
 
-type Provider = "anthropic" | "openai" | "gemini" | "groq"
-
 const PROVIDER_COLORS: Record<string, string> = {
   anthropic: "text-orange-500",
   openai: "text-green-500",
   gemini: "text-blue-500",
   groq: "text-purple-500",
-}
-
-const PROVIDER_LABELS: Record<Provider, string> = {
-  anthropic: "Anthropic",
-  openai: "OpenAI",
-  gemini: "Gemini",
-  groq: "Groq",
-}
-
-const MODELS: Record<Provider, { id: string; label: string }[]> = {
-  anthropic: [
-    { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5 (Fast)" },
-    { id: "claude-sonnet-4-5-20251001", label: "Sonnet 4.5" },
-    { id: "claude-opus-4-5", label: "Opus 4.5" },
-  ],
-  openai: [
-    { id: "gpt-4o-mini", label: "GPT-4o Mini" },
-    { id: "gpt-4o", label: "GPT-4o" },
-    { id: "gpt-4-turbo", label: "GPT-4 Turbo" },
-  ],
-  gemini: [
-    { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
-    { id: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
-    { id: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-  ],
-  groq: [
-    { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
-    { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B (Fast)" },
-    { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B" },
-  ],
-}
-
-const DEFAULT_MODELS: Record<Provider, string> = {
-  anthropic: "claude-haiku-4-5-20251001",
-  openai: "gpt-4o-mini",
-  gemini: "gemini-2.0-flash",
-  groq: "llama-3.3-70b-versatile",
-}
-
-type ParsedSegment =
-  | { kind: "thinking"; text: string }
-  | { kind: "text"; text: string }
-
-function parseThinking(raw: string): ParsedSegment[] {
-  const segments: ParsedSegment[] = []
-  const re = /<think>([\s\S]*?)<\/think>/g
-  let last = 0
-  let m: RegExpExecArray | null
-  while ((m = re.exec(raw)) !== null) {
-    if (m.index > last) segments.push({ kind: "text", text: raw.slice(last, m.index).trim() })
-    if (m[1].trim()) segments.push({ kind: "thinking", text: m[1].trim() })
-    last = re.lastIndex
-  }
-  if (last < raw.length && raw.slice(last).trim()) segments.push({ kind: "text", text: raw.slice(last).trim() })
-  return segments
 }
 
 function ThinkingBlock({ text }: { text: string }) {

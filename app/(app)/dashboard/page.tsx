@@ -6,7 +6,11 @@ import {
   Briefcase, Users, FolderKanban, Flame, TrendingUp, TrendingDown,
   CheckCircle2, ListTodo, Target, Clock, ArrowRight,
 } from "lucide-react"
-import type { JobApplication, FreelanceClient, ProductTask, HabitLog, FinanceEntry, WeeklyReview } from "@/lib/types"
+import type { HabitLog, FinanceEntry, WeeklyReview } from "@/lib/types"
+
+type DashboardJob = { id: string; company: string; role: string; status: string; applied_at: string }
+type DashboardClient = { id: string; client_name: string; status: string; amount_agreed: number | null }
+type DashboardTask = { id: string; title: string; status: string; priority: number }
 
 export const metadata = { title: "Dashboard" }
 
@@ -49,9 +53,9 @@ export default async function DashboardPage() {
     { data: todosPending },
     { data: goalStats },
   ] = await Promise.all([
-    supabase.from("job_applications").select("*").eq("user_id", user!.id).order("applied_at", { ascending: false }),
-    supabase.from("freelance_clients").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }),
-    supabase.from("product_tasks").select("*").eq("user_id", user!.id).order("priority").order("created_at"),
+    supabase.from("job_applications").select("id, company, role, status, applied_at").eq("user_id", user!.id).order("applied_at", { ascending: false }).limit(100),
+    supabase.from("freelance_clients").select("id, client_name, status, amount_agreed").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(50),
+    supabase.from("product_tasks").select("id, title, status, priority").eq("user_id", user!.id).order("priority").order("created_at").limit(200),
     supabase.from("habit_logs").select("*").eq("user_id", user!.id).gte("log_date", monthStart).order("log_date", { ascending: false }),
     supabase.from("finance_entries").select("*").eq("user_id", user!.id).gte("entry_date", monthStart),
     supabase.from("weekly_reviews").select("*").eq("user_id", user!.id).order("week_start", { ascending: false }).limit(1),
@@ -60,9 +64,9 @@ export default async function DashboardPage() {
     supabase.from("goals").select("id, status").eq("user_id", user!.id),
   ])
 
-  const allJobs: JobApplication[] = jobs ?? []
-  const allClients: FreelanceClient[] = clients ?? []
-  const allTasks: ProductTask[] = tasks ?? []
+  const allJobs: DashboardJob[] = jobs ?? []
+  const allClients: DashboardClient[] = clients ?? []
+  const allTasks: DashboardTask[] = tasks ?? []
   const allLogs: HabitLog[] = habitLogs ?? []
   const allEntries: FinanceEntry[] = financeEntries ?? []
   const latestReview: WeeklyReview | null = reviews?.[0] ?? null

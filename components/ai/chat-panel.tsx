@@ -2,61 +2,25 @@
 
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
-import { useState, useRef, useEffect, useMemo, useCallback } from "react"
-import { DropdownMenu } from "radix-ui"
+import { useReducer, useRef, useEffect, useMemo, useCallback, useState } from "react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
+import { queryKeys } from "@/lib/query-keys"
 import {
-  Sheet, SheetContent, SheetTitle,
-} from "@/components/ui/sheet"
+  type Provider, PROVIDER_LABELS, MODELS, DEFAULT_MODELS, parseThinking,
+} from "@/lib/ai/chat-constants"
+import { ThinkingBlock } from "@/components/ai/thinking-block"
+import { DropdownMenu } from "radix-ui"
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   X, Send, Bot, Loader2, Sparkles, CheckCircle2, AlertCircle,
-  XCircle, Brain, ChevronDown, ShieldAlert, SlidersHorizontal,
-  Plus, MessageSquare, Trash2,
+  XCircle, ShieldAlert, SlidersHorizontal, Plus, MessageSquare, Trash2,
 } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { AgentPanel } from "@/components/ai/agent-panel"
 import { TOOL_LABELS } from "@/lib/ai/tool-executor"
-
-// ── Model catalogue ───────────────────────────────────────────────────────────
-type Provider = "anthropic" | "openai" | "gemini" | "groq"
-const PROVIDER_LABELS: Record<Provider, string> = {
-  anthropic: "Anthropic",
-  openai: "OpenAI",
-  gemini: "Gemini",
-  groq: "Groq",
-}
-const MODELS: Record<Provider, { id: string; label: string }[]> = {
-  anthropic: [
-    { id: "claude-haiku-4-5-20251001", label: "Haiku 4.5 (Fast)" },
-    { id: "claude-sonnet-4-5-20251001", label: "Sonnet 4.5" },
-    { id: "claude-opus-4-5", label: "Opus 4.5" },
-  ],
-  openai: [
-    { id: "gpt-4o-mini", label: "GPT-4o Mini" },
-    { id: "gpt-4o", label: "GPT-4o" },
-    { id: "gpt-4-turbo", label: "GPT-4 Turbo" },
-  ],
-  gemini: [
-    { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
-    { id: "gemini-1.5-pro", label: "Gemini 1.5 Pro" },
-    { id: "gemini-1.5-flash", label: "Gemini 1.5 Flash" },
-  ],
-  groq: [
-    { id: "llama-3.3-70b-versatile", label: "Llama 3.3 70B" },
-    { id: "llama-3.1-8b-instant", label: "Llama 3.1 8B (Fast)" },
-    { id: "mixtral-8x7b-32768", label: "Mixtral 8x7B" },
-  ],
-}
-
-const DEFAULT_MODELS: Record<Provider, string> = {
-  anthropic: "claude-haiku-4-5-20251001",
-  openai: "gpt-4o-mini",
-  gemini: "gemini-2.0-flash",
-  groq: "llama-3.3-70b-versatile",
-}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface ConversationSummary {
@@ -78,63 +42,6 @@ const SUGGESTIONS = [
   "Add expense: lunch 500 INR",
   "Summarize today's notes into action items",
 ]
-
-// ── Thinking block parser ─────────────────────────────────────────────────────
-type ParsedSegment =
-  | { kind: "thinking"; text: string }
-  | { kind: "text"; text: string }
-
-function parseThinking(raw: string): ParsedSegment[] {
-  const segments: ParsedSegment[] = []
-  const re = /<think>([\s\S]*?)<\/think>/g
-  let last = 0
-  let m: RegExpExecArray | null
-  while ((m = re.exec(raw)) !== null) {
-    if (m.index > last) segments.push({ kind: "text", text: raw.slice(last, m.index).trim() })
-    if (m[1].trim()) segments.push({ kind: "thinking", text: m[1].trim() })
-    last = re.lastIndex
-  }
-  if (last < raw.length && raw.slice(last).trim()) segments.push({ kind: "text", text: raw.slice(last).trim() })
-  return segments
-}
-
-// ── Thinking collapsible ──────────────────────────────────────────────────────
-function ThinkingBlock({ text }: { text: string }) {
-  const [open, setOpen] = useState(false)
-  return (
-    <div className="not-prose my-1.5 overflow-hidden rounded-lg border border-border/50 bg-muted/20">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <Brain className="h-3 w-3 shrink-0" />
-        <span className="font-medium">Reasoning</span>
-        <motion.span
-          animate={{ rotate: open ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          className="ml-auto"
-        >
-          <ChevronDown className="h-3 w-3" />
-        </motion.span>
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="overflow-hidden"
-          >
-            <p className="px-3 pb-2.5 text-xs leading-relaxed text-muted-foreground/80 italic">
-              {text}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  )
-}
 
 // ── Tool approval card ────────────────────────────────────────────────────────
 type ApprovalResult = { approved: boolean; message: string }
@@ -248,13 +155,71 @@ function ToolStatusLine({ part }: { part: { type: string; toolName: string; stat
   )
 }
 
+// ── Model selector ────────────────────────────────────────────────────────────
+function ModelSelector({
+  provider, modelId, onProviderChange, onModelChange,
+}: {
+  provider: Provider
+  modelId: string
+  onProviderChange: (p: Provider) => void
+  onModelChange: (id: string) => void
+}) {
+  const currentModel = MODELS[provider].find(m => m.id === modelId) ?? MODELS[provider][0]
+  return (
+    <div className="flex items-center gap-1 min-w-0">
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors min-w-0 max-w-[160px]">
+            <span className="truncate">{PROVIDER_LABELS[provider]} · {currentModel.label}</span>
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            className="z-[200] min-w-[200px] overflow-hidden rounded-xl border border-border bg-popover p-1 shadow-lg"
+            sideOffset={6}
+            align="start"
+          >
+            {(Object.keys(MODELS) as Provider[]).map(p => (
+              <DropdownMenu.Sub key={p}>
+                <DropdownMenu.SubTrigger className={cn(
+                  "flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs outline-none transition-colors",
+                  provider === p ? "bg-muted text-foreground font-medium" : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}>
+                  <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", provider === p ? "bg-green-500" : "bg-transparent")} />
+                  {PROVIDER_LABELS[p]}
+                </DropdownMenu.SubTrigger>
+                <DropdownMenu.Portal>
+                  <DropdownMenu.SubContent
+                    className="z-[201] min-w-[180px] overflow-hidden rounded-xl border border-border bg-popover p-1 shadow-lg"
+                    sideOffset={4}
+                  >
+                    {MODELS[p].map(m => (
+                      <DropdownMenu.Item
+                        key={m.id}
+                        onSelect={() => { onProviderChange(p); onModelChange(m.id) }}
+                        className={cn(
+                          "flex cursor-pointer items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs outline-none transition-colors hover:bg-muted",
+                          provider === p && modelId === m.id ? "text-foreground font-medium" : "text-muted-foreground",
+                        )}
+                      >
+                        <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", provider === p && modelId === m.id ? "bg-green-500" : "bg-transparent")} />
+                        {m.label}
+                      </DropdownMenu.Item>
+                    ))}
+                  </DropdownMenu.SubContent>
+                </DropdownMenu.Portal>
+              </DropdownMenu.Sub>
+            ))}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
+    </div>
+  )
+}
+
 // ── Conversation history list ─────────────────────────────────────────────────
 function ConversationList({
-  conversations,
-  currentId,
-  onSelect,
-  onDelete,
-  onNew,
+  conversations, currentId, onSelect, onDelete, onNew,
 }: {
   conversations: ConversationSummary[]
   currentId: string | null
@@ -263,16 +228,15 @@ function ConversationList({
   onNew: () => void
 }) {
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
-        <span className="text-sm font-medium">Conversations</span>
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between px-3 py-2 shrink-0">
+        <span className="text-xs font-medium text-muted-foreground">History</span>
         <motion.button
           whileTap={{ scale: 0.9 }}
           onClick={onNew}
-          className="flex items-center gap-1.5 rounded-lg bg-foreground text-background px-2.5 py-1.5 text-xs font-medium hover:opacity-90 transition-opacity"
+          className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
         >
-          <Plus className="h-3 w-3" />
-          New chat
+          <Plus className="h-3.5 w-3.5" />
         </motion.button>
       </div>
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
@@ -285,27 +249,20 @@ function ConversationList({
                 key={conv.id}
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, height: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                transition={{ duration: 0.15 }}
                 className={cn(
-                  "group flex items-center gap-2 rounded-lg px-3 py-2 cursor-pointer transition-colors",
-                  conv.id === currentId
-                    ? "bg-foreground/10 text-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  "group flex items-center gap-2 rounded-lg px-2.5 py-2 cursor-pointer transition-colors",
+                  conv.id === currentId ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
                 )}
                 onClick={() => onSelect(conv.id)}
               >
-                <MessageSquare className="h-3.5 w-3.5 shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium truncate">{conv.title}</p>
-                  <p className="text-xs text-muted-foreground/60 truncate">
-                    {new Date(conv.updated_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}
-                    {" · "}{conv.model ?? conv.provider}
-                  </p>
-                </div>
+                <MessageSquare className="h-3 w-3 shrink-0" />
+                <span className="flex-1 truncate text-xs">{conv.title}</span>
                 <motion.button
                   whileTap={{ scale: 0.85 }}
-                  onClick={e => { e.stopPropagation(); onDelete(conv.id) }}
-                  className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all shrink-0"
+                  onClick={(e) => { e.stopPropagation(); onDelete(conv.id) }}
+                  className="shrink-0 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive transition-all"
                 >
                   <Trash2 className="h-3 w-3" />
                 </motion.button>
@@ -318,95 +275,62 @@ function ConversationList({
   )
 }
 
-// ── Model selector dropdown ───────────────────────────────────────────────────
-function ModelSelector({
-  provider, modelId,
-  onProviderChange, onModelChange,
-}: {
+// ── Reducer ───────────────────────────────────────────────────────────────────
+type ChatState = {
+  open: boolean
+  showAgentPanel: boolean
+  showHistory: boolean
+  input: string
   provider: Provider
   modelId: string
-  onProviderChange: (p: Provider) => void
-  onModelChange: (id: string) => void
-}) {
-  const currentModel = MODELS[provider].find(m => m.id === modelId)
+  conversationId: string | null
+  approvalResults: Record<string, ApprovalResult>
+  loadingConvId: string | null
+}
 
-  return (
-    <div className="flex items-center gap-2">
-      <Select value={provider} onValueChange={(value) => onProviderChange(value as Provider)}>
-        <SelectTrigger
-          className="h-7 w-28 text-xs sm:hidden"
-          aria-label="Select AI provider"
-        >
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {(Object.keys(PROVIDER_LABELS) as Provider[]).map(p => (
-            <SelectItem key={p} value={p}>
-              {PROVIDER_LABELS[p]}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+type ChatAction =
+  | { type: "SET_OPEN"; open: boolean }
+  | { type: "TOGGLE_HISTORY" }
+  | { type: "TOGGLE_AGENT" }
+  | { type: "SET_INPUT"; value: string }
+  | { type: "CHANGE_PROVIDER"; provider: Provider }
+  | { type: "SET_MODEL"; modelId: string }
+  | { type: "SET_CONVERSATION"; id: string; provider?: Provider; modelId?: string }
+  | { type: "SET_LOADING_CONV_ID"; id: string | null }
+  | { type: "SET_APPROVAL"; toolCallId: string; result: ApprovalResult }
+  | { type: "NEW_CHAT" }
 
-      <div className="hidden items-center rounded-xl border border-border bg-muted/40 p-0.5 sm:flex">
-        {(Object.keys(PROVIDER_LABELS) as Provider[]).map(p => (
-          <button
-            key={p}
-            type="button"
-            onClick={() => onProviderChange(p)}
-            className={cn(
-              "rounded-lg px-2.5 py-1 text-[11px] font-medium transition-colors",
-              provider === p
-                ? "bg-foreground text-background"
-                : "text-muted-foreground hover:text-foreground"
-            )}
-          >
-            {PROVIDER_LABELS[p]}
-          </button>
-        ))}
-      </div>
-
-      <DropdownMenu.Root>
-        <DropdownMenu.Trigger asChild>
-          <button className="flex items-center gap-1.5 rounded-lg border border-border bg-background px-2.5 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors outline-none group">
-            <span className="max-w-[160px] truncate font-medium">{currentModel?.label ?? modelId}</span>
-            <ChevronDown className="h-3 w-3 text-muted-foreground/60 shrink-0 transition-transform group-data-[state=open]:rotate-180" />
-          </button>
-        </DropdownMenu.Trigger>
-
-        <DropdownMenu.Portal>
-          <DropdownMenu.Content
-            side="bottom"
-            align="start"
-            sideOffset={6}
-            className={cn(
-              "z-[200] min-w-[220px] rounded-xl border border-border bg-popover p-1.5 shadow-lg",
-              "data-[state=open]:animate-in data-[state=open]:fade-in-0 data-[state=open]:zoom-in-95",
-              "data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95",
-            )}
-          >
-            <p className="px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
-              {PROVIDER_LABELS[provider]} models
-            </p>
-            {MODELS[provider].map(m => (
-              <DropdownMenu.Item
-                key={m.id}
-                onSelect={() => onModelChange(m.id)}
-                className={cn(
-                  "flex items-center gap-2 rounded-lg px-2 py-1.5 text-xs cursor-pointer outline-none",
-                  "data-[highlighted]:bg-muted transition-colors",
-                  modelId === m.id ? "text-foreground font-medium" : "text-muted-foreground",
-                )}
-              >
-                <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", modelId === m.id ? "bg-green-500" : "bg-transparent")} />
-                {m.label}
-              </DropdownMenu.Item>
-            ))}
-          </DropdownMenu.Content>
-        </DropdownMenu.Portal>
-      </DropdownMenu.Root>
-    </div>
-  )
+function chatReducer(state: ChatState, action: ChatAction): ChatState {
+  switch (action.type) {
+    case "SET_OPEN":
+      return { ...state, open: action.open }
+    case "TOGGLE_HISTORY":
+      return { ...state, showHistory: !state.showHistory, showAgentPanel: false }
+    case "TOGGLE_AGENT":
+      return { ...state, showAgentPanel: !state.showAgentPanel, showHistory: false }
+    case "SET_INPUT":
+      return { ...state, input: action.value }
+    case "CHANGE_PROVIDER":
+      return { ...state, provider: action.provider, modelId: DEFAULT_MODELS[action.provider] }
+    case "SET_MODEL":
+      return { ...state, modelId: action.modelId }
+    case "SET_CONVERSATION":
+      return {
+        ...state,
+        conversationId: action.id,
+        ...(action.provider ? { provider: action.provider as Provider } : {}),
+        ...(action.modelId ? { modelId: action.modelId } : {}),
+        showHistory: false,
+      }
+    case "SET_LOADING_CONV_ID":
+      return { ...state, loadingConvId: action.id }
+    case "SET_APPROVAL":
+      return { ...state, approvalResults: { ...state.approvalResults, [action.toolCallId]: action.result } }
+    case "NEW_CHAT":
+      return { ...state, conversationId: null, input: "", showHistory: false }
+    default:
+      return state
+  }
 }
 
 // ── Main chat panel ───────────────────────────────────────────────────────────
@@ -415,16 +339,21 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
     defaultProvider && (defaultProvider in DEFAULT_MODELS) ? defaultProvider : "anthropic"
   ) as Provider
 
-  const [open, setOpen] = useState(false)
-  const [showAgentPanel, setShowAgentPanel] = useState(false)
-  const [showHistory, setShowHistory] = useState(false)
-  const [input, setInput] = useState("")
-  const [provider, setProvider] = useState<Provider>(resolvedDefault)
-  const [modelId, setModelId] = useState<string>(DEFAULT_MODELS[resolvedDefault])
-  const [conversationId, setConversationId] = useState<string | null>(null)
-  const [conversations, setConversations] = useState<ConversationSummary[]>([])
-  const [loadingConv, setLoadingConv] = useState(false)
-  const [approvalResults, setApprovalResults] = useState<Record<string, ApprovalResult>>({})
+  const [state, dispatch] = useReducer(chatReducer, {
+    open: false,
+    showAgentPanel: false,
+    showHistory: false,
+    input: "",
+    provider: resolvedDefault,
+    modelId: DEFAULT_MODELS[resolvedDefault],
+    conversationId: null,
+    approvalResults: {},
+    loadingConvId: null,
+  })
+
+  const { open, showAgentPanel, showHistory, input, provider, modelId, conversationId, approvalResults, loadingConvId } = state
+
+  const qc = useQueryClient()
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const convIdRef = useRef<string | null>(null)
@@ -447,17 +376,29 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
   const { messages, sendMessage, status, error, stop, setMessages } = useChat({ transport })
   const isLoading = status === "streaming" || status === "submitted"
 
+  const { data: conversations = [], isLoading: loadingConv } = useQuery({
+    queryKey: queryKeys.conversations(),
+    queryFn: async () => {
+      const res = await fetch("/api/ai/conversations")
+      if (!res.ok) throw new Error("Failed to fetch conversations")
+      const { conversations: convs } = await res.json()
+      return convs as ConversationSummary[]
+    },
+    enabled: showHistory,
+    staleTime: 2 * 60 * 1000,
+  })
+
   // Keyboard shortcut Ctrl+Alt+B
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.ctrlKey && e.altKey && e.key.toLowerCase() === "b") {
         e.preventDefault()
-        setOpen(v => !v)
+        dispatch({ type: "SET_OPEN", open: !open })
       }
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [])
+  }, [open])
 
   // Auto-scroll
   useEffect(() => {
@@ -472,19 +413,6 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
     el.style.height = Math.min(el.scrollHeight, 160) + "px"
   }, [input])
 
-  // Load conversations when history panel opens
-  useEffect(() => {
-    if (showHistory) fetchConversations()
-  }, [showHistory])
-
-  async function fetchConversations() {
-    const res = await fetch("/api/ai/conversations")
-    if (res.ok) {
-      const { conversations: convs } = await res.json()
-      setConversations(convs)
-    }
-  }
-
   // Save conversation to DB after stream completes
   async function saveConversation(msgs: typeof messages) {
     if (msgs.length === 0) return
@@ -496,7 +424,6 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
     }))
 
     if (!convIdRef.current) {
-      // Create new conversation
       const firstUserMsg = serialized.find(m => m.role === "user")?.content ?? "New chat"
       const title = firstUserMsg.slice(0, 60) + (firstUserMsg.length > 60 ? "…" : "")
       const res = await fetch("/api/ai/conversations", {
@@ -506,19 +433,16 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
       })
       if (res.ok) {
         const { conversation } = await res.json()
-        setConversationId(conversation.id)
+        dispatch({ type: "SET_CONVERSATION", id: conversation.id })
         convIdRef.current = conversation.id
-        // Save messages
         await fetch(`/api/ai/conversations/${conversation.id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ messages: serialized, provider, model: modelId }),
         })
-        // Refresh list
-        fetchConversations()
+        qc.invalidateQueries({ queryKey: queryKeys.conversations() })
       }
     } else {
-      // Update existing
       await fetch(`/api/ai/conversations/${convIdRef.current}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -538,13 +462,12 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
   }, [status])
 
   async function loadConversation(id: string) {
-    setLoadingConv(true)
+    dispatch({ type: "SET_LOADING_CONV_ID", id })
     try {
       const res = await fetch(`/api/ai/conversations/${id}`)
       if (!res.ok) return
       const { conversation, messages: dbMsgs } = await res.json()
 
-      // Reconstruct messages for useChat
       const reconstructed = dbMsgs.map((m: { id?: string; role: string; content: string; parts?: unknown }) => ({
         id: m.id ?? crypto.randomUUID(),
         role: m.role as "user" | "assistant",
@@ -554,56 +477,42 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
       }))
 
       setMessages(reconstructed)
-      setConversationId(id)
-      convIdRef.current = id
-
-      // Restore model
-      if (conversation.provider) setProvider(conversation.provider as Provider)
-      if (conversation.model) setModelId(conversation.model)
-
-      setShowHistory(false)
+      dispatch({
+        type: "SET_CONVERSATION",
+        id,
+        provider: conversation.provider,
+        modelId: conversation.model,
+      })
     } finally {
-      setLoadingConv(false)
+      dispatch({ type: "SET_LOADING_CONV_ID", id: null })
     }
   }
 
   async function deleteConversation(id: string) {
     await fetch(`/api/ai/conversations/${id}`, { method: "DELETE" })
-    setConversations(c => c.filter(x => x.id !== id))
+    qc.invalidateQueries({ queryKey: queryKeys.conversations() })
     if (convIdRef.current === id) startNewChat()
   }
 
   function startNewChat() {
     setMessages([])
-    setConversationId(null)
+    dispatch({ type: "NEW_CHAT" })
     convIdRef.current = null
-    setInput("")
-    setShowHistory(false)
   }
 
   const handleSubmit = useCallback(async (e?: React.FormEvent) => {
     e?.preventDefault()
     const text = input.trim()
     if (!text || isLoading) return
-    setInput("")
+    dispatch({ type: "SET_INPUT", value: "" })
     await sendMessage({ text })
   }, [input, isLoading, sendMessage])
-
-  function setApprovalResult(toolCallId: string, result: ApprovalResult) {
-    setApprovalResults(prev => ({ ...prev, [toolCallId]: result }))
-  }
-
-  // Provider changed → reset model to default for that provider
-  function changeProvider(p: Provider) {
-    setProvider(p)
-    setModelId(DEFAULT_MODELS[p])
-  }
 
   return (
     <>
       {/* FAB */}
       <motion.button
-        onClick={() => setOpen(true)}
+        onClick={() => dispatch({ type: "SET_OPEN", open: true })}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.93 }}
         className={cn(
@@ -617,7 +526,7 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
       </motion.button>
 
       {/* Sheet */}
-      <Sheet open={open} onOpenChange={setOpen}>
+      <Sheet open={open} onOpenChange={(o) => dispatch({ type: "SET_OPEN", open: o })}>
         <SheetContent
           side="right"
           showCloseButton={false}
@@ -628,11 +537,9 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
           {/* Header */}
           <div className="flex items-center gap-2 border-b border-border px-3 py-2.5 shrink-0">
             <Bot className="h-4 w-4 text-muted-foreground shrink-0" />
-
             {isLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground shrink-0" />}
-
             <button
-              onClick={() => setOpen(false)}
+              onClick={() => dispatch({ type: "SET_OPEN", open: false })}
               className="ml-auto rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
             >
               <X className="h-4 w-4" />
@@ -682,190 +589,188 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 min-h-0">
             <div className="flex min-h-full flex-col gap-4">
-            {!hasApiKey && (
-              <div className="flex items-start gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-700 dark:text-yellow-400">
-                <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-                <span>No AI key configured. Go to <strong>Settings → AI</strong> to add your key.</span>
-              </div>
-            )}
+              {!hasApiKey && (
+                <div className="flex items-start gap-2 rounded-xl border border-yellow-500/30 bg-yellow-500/10 p-3 text-xs text-yellow-700 dark:text-yellow-400">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>No AI key configured. Go to <strong>Settings → AI</strong> to add your key.</span>
+                </div>
+              )}
 
-            {messages.length === 0 && !showAgentPanel && !showHistory && (
-              <div className="flex min-h-full items-center justify-center">
-                <div className="w-full max-w-sm space-y-4">
-                  <p className="text-xs text-muted-foreground text-center">
-                    Ask me to log habits, add todos, track expenses, and more.
-                    <br />
-                    <span className="opacity-60 text-[10px]">Ctrl+Alt+B to toggle</span>
-                  </p>
-                  <div className="space-y-2">
-                    {SUGGESTIONS.map((s) => (
-                      <motion.button
-                        key={s}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={() => setInput(s)}
-                        className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-left text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all"
-                      >
-                        {s}
-                      </motion.button>
-                    ))}
+              {messages.length === 0 && !showAgentPanel && !showHistory && (
+                <div className="flex min-h-full items-center justify-center">
+                  <div className="w-full max-w-sm space-y-4">
+                    <p className="text-xs text-muted-foreground text-center">
+                      Ask me to log habits, add todos, track expenses, and more.
+                      <br />
+                      <span className="opacity-60 text-[10px]">Ctrl+Alt+B to toggle</span>
+                    </p>
+                    <div className="space-y-2">
+                      {SUGGESTIONS.map((s) => (
+                        <motion.button
+                          key={s}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => dispatch({ type: "SET_INPUT", value: s })}
+                          className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-left text-xs text-muted-foreground hover:text-foreground hover:border-foreground/20 transition-all"
+                        >
+                          {s}
+                        </motion.button>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {messages.length > 0 && <div className="mt-auto" />}
+              {messages.length > 0 && <div className="mt-auto" />}
 
-            <AnimatePresence initial={false}>
-              {messages.map((msg) => (
-                <motion.div
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={cn(
-                    "flex flex-col gap-0.5",
-                    msg.role === "user" ? "items-end" : "items-start",
-                  )}
-                >
-                  <div
+              <AnimatePresence initial={false}>
+                {messages.map((msg) => (
+                  <motion.div
+                    key={msg.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
                     className={cn(
-                      "max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm",
-                      msg.role === "user"
-                        ? "bg-foreground text-background rounded-br-sm"
-                        : "bg-muted rounded-bl-sm w-full max-w-full",
+                      "flex flex-col gap-0.5",
+                      msg.role === "user" ? "items-end" : "items-start",
                     )}
                   >
-                    {msg.role === "user" ? (
-                      <p className="whitespace-pre-wrap leading-relaxed">
-                        {msg.parts?.find(p => p.type === "text")?.text ?? ""}
-                      </p>
-                    ) : (
-                      <div className="space-y-0.5">
-                        {msg.parts?.map((part, i) => {
-                          if (part.type === "text") {
-                            const segments = parseThinking(part.text)
-                            return (
-                              <div key={i}>
-                                {segments.map((seg, j) =>
-                                  seg.kind === "thinking" ? (
-                                    <ThinkingBlock key={j} text={seg.text} />
-                                  ) : seg.text ? (
-                                    <div key={j} className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2">
-                                      <ReactMarkdown>{seg.text}</ReactMarkdown>
-                                    </div>
-                                  ) : null
-                                )}
-                              </div>
-                            )
-                          }
-
-                          if (part.type === "dynamic-tool") {
-                            const output = part.state === "output-available" ? part.output as Record<string, unknown> : null
-                            const toolCallId = part.toolCallId
-                            const resolved = approvalResults[toolCallId]
-
-                            if (resolved) {
+                    <div
+                      className={cn(
+                        "max-w-[88%] rounded-2xl px-3.5 py-2.5 text-sm",
+                        msg.role === "user"
+                          ? "bg-foreground text-background rounded-br-sm"
+                          : "bg-muted rounded-bl-sm w-full max-w-full",
+                      )}
+                    >
+                      {msg.role === "user" ? (
+                        <p className="whitespace-pre-wrap leading-relaxed">
+                          {msg.parts?.find(p => p.type === "text")?.text ?? ""}
+                        </p>
+                      ) : (
+                        <div className="space-y-0.5">
+                          {msg.parts?.map((part, i) => {
+                            if (part.type === "text") {
+                              const segments = parseThinking(part.text)
                               return (
-                                <div key={i} className={cn("not-prose flex items-start gap-1.5 my-1.5 text-xs rounded-lg p-2", resolved.approved ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400")}>
-                                  {resolved.approved
-                                    ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                                    : <XCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />}
-                                  <span>{resolved.message}</span>
-                                </div>
-                              )
-                            }
-
-                            if (output?._approval_needed) {
-                              return (
-                                <ToolApprovalCard
-                                  key={i}
-                                  toolName={String(output._tool ?? part.toolName)}
-                                  description={String(output.message ?? "")}
-                                  args={String(output._args ?? "{}")}
-                                  onResult={(r) => setApprovalResult(toolCallId, r)}
-                                />
-                              )
-                            }
-
-                            if (output?._blocked) {
-                              return (
-                                <div key={i} className="not-prose flex items-center gap-1.5 my-1.5 text-xs text-red-500/80">
-                                  <XCircle className="h-3.5 w-3.5 shrink-0" />
-                                  <span className="font-mono">{String(output.message)}</span>
-                                </div>
-                              )
-                            }
-
-                            if (part.toolName === "listProjects" && output && Array.isArray((output as { projects?: unknown }).projects)) {
-                              const projects = (output as { projects: Array<{ name: string; total: number; done: number }> }).projects
-                              return (
-                                <div key={i} className="not-prose my-1.5 rounded-lg border border-border bg-card px-2.5 py-2 text-xs">
-                                  <p className="font-medium">Projects ({projects.length})</p>
-                                  {projects.length === 0 ? (
-                                    <p className="text-muted-foreground">No active projects.</p>
-                                  ) : (
-                                    <div className="mt-1 space-y-0.5 text-muted-foreground">
-                                      {projects.map((p, idx) => (
-                                        <p key={`${p.name}-${idx}`} className="truncate">• {p.name} — {p.done}/{p.total} done</p>
-                                      ))}
-                                    </div>
+                                <div key={i}>
+                                  {segments.map((seg, j) =>
+                                    seg.kind === "thinking" ? (
+                                      <ThinkingBlock key={j} text={seg.text} />
+                                    ) : seg.text ? (
+                                      <div key={j} className="prose prose-sm dark:prose-invert max-w-none prose-p:my-1 prose-headings:my-2">
+                                        <ReactMarkdown>{seg.text}</ReactMarkdown>
+                                      </div>
+                                    ) : null
                                   )}
                                 </div>
                               )
                             }
 
-                            return <ToolStatusLine key={i} part={{ type: part.type, toolName: part.toolName, state: part.state, output: output ?? undefined, errorText: part.state === "output-error" ? part.errorText : undefined }} />
-                          }
+                            if (part.type === "dynamic-tool") {
+                              const output = part.state === "output-available" ? part.output as Record<string, unknown> : null
+                              const toolCallId = part.toolCallId
+                              const resolved = approvalResults[toolCallId]
 
-                          return null
-                        })}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
+                              if (resolved) {
+                                return (
+                                  <div key={i} className={cn("not-prose flex items-start gap-1.5 my-1.5 text-xs rounded-lg p-2", resolved.approved ? "bg-green-500/10 text-green-700 dark:text-green-400" : "bg-red-500/10 text-red-600 dark:text-red-400")}>
+                                    {resolved.approved
+                                      ? <CheckCircle2 className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                                      : <XCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />}
+                                    <span>{resolved.message}</span>
+                                  </div>
+                                )
+                              }
 
-            {/* Typing indicator */}
-            {isLoading && messages[messages.length - 1]?.role === "user" && (
-              <div className="flex items-start">
-                <div className="rounded-2xl rounded-bl-sm bg-muted px-3.5 py-2.5">
-                  <div className="flex gap-1">
-                    {[0, 150, 300].map(delay => (
-                      <span key={delay} className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: `${delay}ms` }} />
-                    ))}
+                              if (output?._approval_needed) {
+                                return (
+                                  <ToolApprovalCard
+                                    key={i}
+                                    toolName={String(output._tool ?? part.toolName)}
+                                    description={String(output.message ?? "")}
+                                    args={String(output._args ?? "{}")}
+                                    onResult={(r) => dispatch({ type: "SET_APPROVAL", toolCallId, result: r })}
+                                  />
+                                )
+                              }
+
+                              if (output?._blocked) {
+                                return (
+                                  <div key={i} className="not-prose flex items-center gap-1.5 my-1.5 text-xs text-red-500/80">
+                                    <XCircle className="h-3.5 w-3.5 shrink-0" />
+                                    <span className="font-mono">{String(output.message)}</span>
+                                  </div>
+                                )
+                              }
+
+                              if (part.toolName === "listProjects" && output && Array.isArray((output as { projects?: unknown }).projects)) {
+                                const projects = (output as { projects: Array<{ name: string; total: number; done: number }> }).projects
+                                return (
+                                  <div key={i} className="not-prose my-1.5 rounded-lg border border-border bg-card px-2.5 py-2 text-xs">
+                                    <p className="font-medium">Projects ({projects.length})</p>
+                                    {projects.length === 0 ? (
+                                      <p className="text-muted-foreground">No active projects.</p>
+                                    ) : (
+                                      <div className="mt-1 space-y-0.5 text-muted-foreground">
+                                        {projects.map((p, idx) => (
+                                          <p key={`${p.name}-${idx}`} className="truncate">• {p.name} — {p.done}/{p.total} done</p>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              }
+
+                              return <ToolStatusLine key={i} part={{ type: part.type, toolName: part.toolName, state: part.state, output: output ?? undefined, errorText: part.state === "output-error" ? part.errorText : undefined }} />
+                            }
+
+                            return null
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+
+              {/* Typing indicator */}
+              {isLoading && messages[messages.length - 1]?.role === "user" && (
+                <div className="flex items-start">
+                  <div className="rounded-2xl rounded-bl-sm bg-muted px-3.5 py-2.5">
+                    <div className="flex gap-1">
+                      {[0, 150, 300].map(delay => (
+                        <span key={delay} className="h-1.5 w-1.5 rounded-full bg-muted-foreground/60 animate-bounce" style={{ animationDelay: `${delay}ms` }} />
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {error && (
-              <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-400">
-                {error.message}
-              </div>
-            )}
+              {error && (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-600 dark:text-red-400">
+                  {error.message}
+                </div>
+              )}
 
-            <div ref={bottomRef} />
+              <div ref={bottomRef} />
             </div>
           </div>
 
           {/* Composer */}
           <div className="border-t border-border p-3 shrink-0">
-            <form
-              onSubmit={handleSubmit}
-              className="flex flex-col gap-2"
-            >
+            <form onSubmit={handleSubmit} className="flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
                 <ModelSelector
                   provider={provider}
                   modelId={modelId}
-                  onProviderChange={changeProvider}
-                  onModelChange={setModelId}
+                  onProviderChange={(p) => dispatch({ type: "CHANGE_PROVIDER", provider: p })}
+                  onModelChange={(id) => dispatch({ type: "SET_MODEL", modelId: id })}
                 />
                 <div className="flex items-center gap-1">
                   <motion.button
+                    type="button"
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => { setShowHistory(v => !v); setShowAgentPanel(false) }}
+                    onClick={() => dispatch({ type: "TOGGLE_HISTORY" })}
                     title="Chat history"
                     className={cn(
                       "rounded-md p-1.5 transition-colors",
@@ -877,6 +782,7 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
                     <MessageSquare className="h-3.5 w-3.5" />
                   </motion.button>
                   <motion.button
+                    type="button"
                     whileTap={{ scale: 0.9 }}
                     onClick={startNewChat}
                     title="New chat"
@@ -885,8 +791,9 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
                     <Plus className="h-3.5 w-3.5" />
                   </motion.button>
                   <motion.button
+                    type="button"
                     whileTap={{ scale: 0.9 }}
-                    onClick={() => { setShowAgentPanel(v => !v); setShowHistory(false) }}
+                    onClick={() => dispatch({ type: "TOGGLE_AGENT" })}
                     title="Agent context, memory & permissions"
                     className={cn(
                       "rounded-md p-1.5 transition-colors",
@@ -899,6 +806,7 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
                   </motion.button>
                   {isLoading && (
                     <button
+                      type="button"
                       onClick={() => stop()}
                       className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     >
@@ -911,7 +819,7 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
                 <textarea
                   ref={textareaRef}
                   value={input}
-                  onChange={e => setInput(e.target.value)}
+                  onChange={e => dispatch({ type: "SET_INPUT", value: e.target.value })}
                   onKeyDown={e => {
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault()

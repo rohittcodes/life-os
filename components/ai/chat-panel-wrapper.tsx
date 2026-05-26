@@ -1,7 +1,12 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
-import { ChatPanel } from "@/components/ai/chat-panel"
+
+const ChatPanel = dynamic(
+  () => import("@/components/ai/chat-panel").then((m) => ({ default: m.ChatPanel })),
+  { ssr: false }
+)
 
 type Props = {
   hasApiKey: boolean

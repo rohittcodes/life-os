@@ -1,7 +1,10 @@
 "use client"
 
-import { useTransition, useRef, useState } from "react"
+import { useRef, useState } from "react"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { addTodo, toggleTodo, deleteTodo, clearCompleted } from "@/app/(app)/todos/actions"
+import { fetchTodos } from "@/lib/supabase/queries/todos"
+import { queryKeys } from "@/lib/query-keys"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -21,31 +24,112 @@ const itemVariants = {
   exit: { opacity: 0, x: -8, transition: { duration: 0.14 } },
 }
 
-export function TodoList({ todos }: { todos: Todo[] }) {
-  const [, startTransition] = useTransition()
+export function TodoList({ initialTodos }: { initialTodos: Todo[] }) {
+  const qc = useQueryClient()
   const formRef = useRef<HTMLFormElement>(null)
   const [showDone, setShowDone] = useState(false)
   const [priority, setPriority] = useState("normal")
 
-  const pending = todos.filter((t) => !t.done)
-  const done = todos.filter((t) => t.done)
+  const { data: todos = [] } = useQuery({
+    queryKey: queryKeys.todos(),
+    queryFn: fetchTodos,
+    initialData: initialTodos,
+    staleTime: 30 * 1000,
+  })
+
+  const toggleMutation = useMutation({
+    mutationFn: ({ id, done }: { id: string; done: boolean }) => toggleTodo(id, done),
+    onMutate: async ({ id, done }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.todos() })
+      const prev = qc.getQueryData<Todo[]>(queryKeys.todos())
+      qc.setQueryData<Todo[]>(queryKeys.todos(), (old) =>
+        old?.map((t) => (t.id === id ? { ...t, done } : t)) ?? []
+      )
+      return { prev }
+    },
+    onError: (_, __, ctx) => qc.setQueryData(queryKeys.todos(), ctx?.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.todos() }),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteTodo(id),
+    onMutate: async (id) => {
+      await qc.cancelQueries({ queryKey: queryKeys.todos() })
+      const prev = qc.getQueryData<Todo[]>(queryKeys.todos())
+      qc.setQueryData<Todo[]>(queryKeys.todos(), (old) => old?.filter((t) => t.id !== id) ?? [])
+      return { prev }
+    },
+    onError: (_, __, ctx) => qc.setQueryData(queryKeys.todos(), ctx?.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.todos() }),
+  })
+
+  const clearMutation = useMutation({
+    mutationFn: () => clearCompleted(),
+    onMutate: async () => {
+      await qc.cancelQueries({ queryKey: queryKeys.todos() })
+      const prev = qc.getQueryData<Todo[]>(queryKeys.todos())
+      qc.setQueryData<Todo[]>(queryKeys.todos(), (old) => old?.filter((t) => !t.done) ?? [])
+      return { prev }
+    },
+    onError: (_, __, ctx) => qc.setQueryData(queryKeys.todos(), ctx?.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.todos() }),
+  })
+
+  const addMutation = useMutation({
+    mutationFn: async ({
+      title,
+      priority,
+      due_date,
+    }: {
+      title: string
+      priority: string
+      due_date: string | null
+    }) => {
+      const fd = new FormData()
+      fd.set("title", title)
+      fd.set("priority", priority)
+      if (due_date) fd.set("due_date", due_date)
+      await addTodo(fd)
+    },
+    onMutate: async ({ title, priority, due_date }) => {
+      await qc.cancelQueries({ queryKey: queryKeys.todos() })
+      const prev = qc.getQueryData<Todo[]>(queryKeys.todos())
+      const tempItem: Todo = {
+        id: `temp-${crypto.randomUUID()}`,
+        user_id: "",
+        title,
+        done: false,
+        priority: priority as Todo["priority"],
+        due_date: due_date ?? null,
+        category: null,
+        created_at: new Date().toISOString(),
+      }
+      qc.setQueryData<Todo[]>(queryKeys.todos(), (old) => [tempItem, ...(old ?? [])])
+      return { prev }
+    },
+    onError: (_, __, ctx) => qc.setQueryData(queryKeys.todos(), ctx?.prev),
+    onSettled: () => qc.invalidateQueries({ queryKey: queryKeys.todos() }),
+  })
 
   function handleAdd(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     const fd = new FormData(e.currentTarget)
-    fd.set("priority", priority)
+    const title = fd.get("title") as string
+    const due_date = (fd.get("due_date") as string) || null
+    if (!title?.trim()) return
     formRef.current?.reset()
-    startTransition(() => addTodo(fd))
+    addMutation.mutate({ title: title.trim(), priority, due_date })
   }
 
   const today = new Date().toISOString().split("T")[0]
+  const pending = todos.filter((t) => !t.done)
+  const done = todos.filter((t) => t.done)
   const overdue = pending.filter((t) => t.due_date && t.due_date < today)
   const todayTodos = pending.filter((t) => t.due_date === today)
   const upcoming = pending.filter((t) => !t.due_date || t.due_date > today)
 
   return (
     <div className="space-y-6">
-      {/* Quick add — two-row layout so nothing overflows on mobile */}
       <form ref={formRef} onSubmit={handleAdd} className="space-y-2">
         <div className="flex gap-2">
           <Input
@@ -86,8 +170,8 @@ export function TodoList({ todos }: { todos: Todo[] }) {
             label="Overdue"
             icon={<AlertTriangle className="h-3 w-3 text-orange-500" />}
             todos={overdue}
-            onToggle={(id, done) => startTransition(() => toggleTodo(id, done))}
-            onDelete={(id) => startTransition(() => deleteTodo(id))}
+            onToggle={(id, done) => toggleMutation.mutate({ id, done })}
+            onDelete={(id) => deleteMutation.mutate(id)}
             warn
           />
         )}
@@ -97,8 +181,8 @@ export function TodoList({ todos }: { todos: Todo[] }) {
             key="today"
             label="Today"
             todos={todayTodos}
-            onToggle={(id, done) => startTransition(() => toggleTodo(id, done))}
-            onDelete={(id) => startTransition(() => deleteTodo(id))}
+            onToggle={(id, done) => toggleMutation.mutate({ id, done })}
+            onDelete={(id) => deleteMutation.mutate(id)}
           />
         )}
 
@@ -107,8 +191,8 @@ export function TodoList({ todos }: { todos: Todo[] }) {
             key="upcoming"
             label="Upcoming"
             todos={upcoming}
-            onToggle={(id, done) => startTransition(() => toggleTodo(id, done))}
-            onDelete={(id) => startTransition(() => deleteTodo(id))}
+            onToggle={(id, done) => toggleMutation.mutate({ id, done })}
+            onDelete={(id) => deleteMutation.mutate(id)}
           />
         )}
       </AnimatePresence>
@@ -125,7 +209,7 @@ export function TodoList({ todos }: { todos: Todo[] }) {
             </motion.button>
             <motion.button
               whileTap={{ scale: 0.95 }}
-              onClick={() => startTransition(() => clearCompleted())}
+              onClick={() => clearMutation.mutate()}
               className="text-xs text-muted-foreground hover:text-destructive transition-colors"
             >
               Clear all
@@ -145,8 +229,8 @@ export function TodoList({ todos }: { todos: Todo[] }) {
                     <TodoRow
                       key={t.id}
                       todo={t}
-                      onToggle={(done) => startTransition(() => toggleTodo(t.id, done))}
-                      onDelete={() => startTransition(() => deleteTodo(t.id))}
+                      onToggle={(done) => toggleMutation.mutate({ id: t.id, done })}
+                      onDelete={() => deleteMutation.mutate(t.id)}
                     />
                   ))}
                 </AnimatePresence>
