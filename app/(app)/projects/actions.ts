@@ -82,3 +82,9 @@ export async function deleteStep(stepId: string, projectId: string) {
   await supabase.from("task_steps").delete().eq("id", stepId).eq("user_id", user.id)
   revalidatePath(`/projects/${projectId}`)
 }
+
+export async function updateTaskNotes(taskId: string, notes: string | null, projectId: string) {
+  const { supabase, user } = await requireUser()
+  await supabase.from("product_tasks").update({ notes }).eq("id", taskId).eq("user_id", user.id)
+  revalidatePath(`/projects/${projectId}`)
+}

@@ -677,6 +677,10 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
                       ) : (
                         <div className="space-y-0.5">
                           {msg.parts?.map((part, i) => {
+                            if (part.type === "reasoning") {
+                              return <ThinkingBlock key={i} text={(part as { type: string; text: string }).text} />
+                            }
+
                             if (part.type === "text") {
                               const segments = parseThinking(part.text)
                               return (

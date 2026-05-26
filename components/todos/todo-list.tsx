@@ -810,7 +810,7 @@ function KanbanCardContent({
         {gripProps && (
           <div
             {...(gripProps as React.HTMLAttributes<HTMLDivElement>)}
-            className="mt-0.5 shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/20 hover:text-muted-foreground/60 opacity-0 group-hover:opacity-100 transition-opacity touch-none"
+            className="mt-0.5 shrink-0 cursor-grab active:cursor-grabbing text-muted-foreground/30 hover:text-muted-foreground/70 opacity-50 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity touch-none"
           >
             <GripVertical className="h-3.5 w-3.5" />
           </div>

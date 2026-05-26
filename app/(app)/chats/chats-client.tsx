@@ -433,13 +433,27 @@ export function ChatsClient({
                   {selected.provider}{selected.model ? ` · ${selected.model}` : ""}
                 </p>
               </div>
-              <div className="ml-auto text-xs text-muted-foreground/70">
-                {new Date(selected.updated_at).toLocaleDateString("en-IN", {
-                  day: "numeric",
-                  month: "short",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-xs text-muted-foreground/70">
+                  {new Date(selected.updated_at).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+                <button
+                  onClick={() => deleteConversation(selected.id)}
+                  disabled={deleting === selected.id}
+                  title="Delete conversation"
+                  className="rounded-lg p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  {deleting === selected.id ? (
+                    <div className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin" />
+                  ) : (
+                    <Trash2 className="h-4 w-4" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -479,6 +493,10 @@ export function ChatsClient({
                       ) : (
                         <div className="space-y-0.5">
                           {msg.parts?.map((part, i) => {
+                            if (part.type === "reasoning") {
+                              return <ThinkingBlock key={i} text={(part as { type: string; text: string }).text} />
+                            }
+
                             if (part.type === "text") {
                               const segments = parseThinking(part.text)
                               return (

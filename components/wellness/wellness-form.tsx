@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useState, useTransition, useEffect } from "react"
 import { upsertWellness } from "@/app/(app)/wellness/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,13 +21,31 @@ export function WellnessForm({ date, existing }: Props) {
   const [, startTransition] = useTransition()
   const [mood, setMood] = useState(existing?.mood ?? 0)
   const [energy, setEnergy] = useState(existing?.energy ?? 0)
+  const [sleep, setSleep] = useState(existing?.sleep_hours?.toString() ?? "")
+  const [water, setWater] = useState(existing?.water_glasses ? existing.water_glasses.toString() : "")
+  const [steps, setSteps] = useState(existing?.steps?.toString() ?? "")
+  const [notes, setNotes] = useState(existing?.notes ?? "")
   const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    setMood(existing?.mood ?? 0)
+    setEnergy(existing?.energy ?? 0)
+    setSleep(existing?.sleep_hours?.toString() ?? "")
+    setWater(existing?.water_glasses ? existing.water_glasses.toString() : "")
+    setSteps(existing?.steps?.toString() ?? "")
+    setNotes(existing?.notes ?? "")
+  }, [existing])
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-    const fd = new FormData(e.currentTarget)
+    const fd = new FormData()
+    fd.set("log_date", date)
     fd.set("mood", String(mood))
     fd.set("energy", String(energy))
+    fd.set("sleep_hours", sleep)
+    fd.set("water_glasses", water)
+    fd.set("steps", steps)
+    fd.set("notes", notes)
     startTransition(async () => {
       await upsertWellness(fd)
       setSaved(true)
@@ -37,7 +55,6 @@ export function WellnessForm({ date, existing }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6 rounded-xl border border-border bg-card p-6">
-      <input type="hidden" name="log_date" value={date} />
 
       <div className="grid grid-cols-2 gap-6">
         {/* Mood */}
@@ -86,33 +103,33 @@ export function WellnessForm({ date, existing }: Props) {
         <div className="space-y-1.5">
           <Label>Sleep (hours)</Label>
           <Input
-            name="sleep_hours"
             type="number"
             step="0.5"
             min="0"
             max="24"
-            defaultValue={existing?.sleep_hours ?? ""}
+            value={sleep}
+            onChange={(e) => setSleep(e.target.value)}
             placeholder="7.5"
           />
         </div>
         <div className="space-y-1.5">
           <Label>Water (glasses)</Label>
           <Input
-            name="water_glasses"
             type="number"
             min="0"
             max="20"
-            defaultValue={existing?.water_glasses ?? ""}
+            value={water}
+            onChange={(e) => setWater(e.target.value)}
             placeholder="8"
           />
         </div>
         <div className="space-y-1.5">
           <Label>Steps</Label>
           <Input
-            name="steps"
             type="number"
             min="0"
-            defaultValue={existing?.steps ?? ""}
+            value={steps}
+            onChange={(e) => setSteps(e.target.value)}
             placeholder="8000"
           />
         </div>
@@ -121,9 +138,9 @@ export function WellnessForm({ date, existing }: Props) {
       <div className="space-y-1.5">
         <Label>Notes</Label>
         <Textarea
-          name="notes"
           rows={2}
-          defaultValue={existing?.notes ?? ""}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
           placeholder="How are you feeling today? Anything notable?"
         />
       </div>

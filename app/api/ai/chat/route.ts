@@ -117,6 +117,17 @@ export async function POST(req: Request) {
   try { model = getModel(provider, keys, bodyModel) }
   catch (e) { return Response.json({ error: (e as Error).message }, { status: 400 }) }
 
+  const effectiveModel = bodyModel || DEFAULT_MODELS[provider] || DEFAULT_MODELS["anthropic"]
+  const useAnthropicThinking = provider === "anthropic" && !effectiveModel.includes("haiku")
+  const GROQ_REASONING_MODELS = ["qwen3", "qwq", "deepseek-r1"]
+  const useGroqReasoning = provider === "groq" && GROQ_REASONING_MODELS.some((m) => effectiveModel.includes(m))
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const providerOptions: any = useAnthropicThinking
+    ? { anthropic: { thinking: { type: "enabled", budgetTokens: 8000 } } }
+    : useGroqReasoning
+    ? { groq: { reasoningFormat: "parsed" } }
+    : undefined
+
   const today = new Date().toISOString().split("T")[0]
   const now = new Date()
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]
@@ -179,6 +190,7 @@ export async function POST(req: Request) {
   const result = streamText({
     model,
     stopWhen: stepCountIs(10),
+    ...(providerOptions && { providerOptions }),
     system: `You are the Life OS AI — a personal assistant deeply integrated into the user's life management system. You have live access to their habits, todos, finances, wellness, goals, and notes. Your job is to give genuinely useful, personalised responses that reference their actual data.
 
 Today: ${today} (${now.toLocaleDateString("en-IN", { weekday: "long" })}). Currency: INR (₹).
@@ -212,13 +224,6 @@ ${agentMemory.length > 0 ? `\nREMEMBERED:\n${agentMemory.map(m => `• ${m}`).jo
 ${currentPage ? `\nCURRENT VIEW: User has the ${PAGE_LABELS[currentPage] ?? currentPage} page open — lean into context relevant to that section.` : ""}
 
 ━━ INSTRUCTIONS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Thinking: Before responding, reason through the user's request in <think>…</think> tags. Think about:
-- What exactly is the user asking for?
-- Which pieces of their live context are relevant?
-- What tools do you need to call, and in what order?
-- What would be the most useful, specific response given what you know about their life right now?
-Be thorough — this reasoning is hidden from the user and directly improves response quality.
 
 Response guidelines:
 - Be specific and personal — reference their actual data, not generic advice. "You have 3 overdue todos including X" beats "you should check your todos."

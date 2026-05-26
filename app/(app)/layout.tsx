@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <AppSidebar />
         <SidebarInset>
           {/* Header — NOT sticky; scroll is contained inside <main> below */}
-          <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border/60 bg-background px-5">
+          <header className="flex h-14 shrink-0 items-center gap-2 border-b-2 border-border/70 bg-background px-5">
             <SidebarTrigger className="-ml-1 text-muted-foreground hover:text-foreground" />
             <Separator orientation="vertical" className="mr-1 h-5 opacity-40" />
             <div className="ml-auto lg:hidden">
@@ -42,7 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           )}
 
           {/* All scrolling happens here — inside the rounded inset */}
-          <main className="flex-1 overflow-y-auto">
+          <main className="flex-1 overflow-y-auto pb-24">
             {children}
           </main>
         </SidebarInset>

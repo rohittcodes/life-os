@@ -56,3 +56,9 @@ export async function deleteTask(id: string) {
 
   revalidatePath("/product")
 }
+
+export async function updateTaskNotes(id: string, notes: string | null) {
+  const { supabase, user } = await requireUser()
+  await supabase.from("product_tasks").update({ notes }).eq("id", id).eq("user_id", user.id)
+  revalidatePath("/product")
+}
