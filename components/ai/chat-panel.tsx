@@ -3,6 +3,7 @@
 import { useChat } from "@ai-sdk/react"
 import { DefaultChatTransport } from "ai"
 import { useReducer, useRef, useEffect, useMemo, useCallback, useState } from "react"
+import { usePathname } from "next/navigation"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { queryKeys } from "@/lib/query-keys"
 import {
@@ -36,12 +37,25 @@ interface Props {
   defaultProvider?: string
 }
 
-const SUGGESTIONS = [
+const DEFAULT_SUGGESTIONS = [
   "Plan my day from calendar + tasks",
   "Log habit: workout + 2L water",
   "Add expense: lunch 500 INR",
   "Summarize today's notes into action items",
 ]
+
+const PAGE_SUGGESTIONS: Record<string, string[]> = {
+  "/finance":   ["What's my net balance this month?", "Add expense: lunch ₹450", "Where am I spending the most?", "Show income vs expenses"],
+  "/todos":     ["What are my overdue todos?", "Add todo: review contract by Friday", "Clear all completed todos", "What should I tackle first today?"],
+  "/habits":    ["Log today's habits", "What's my current streak?", "How consistent have I been this week?", "Add a new custom habit"],
+  "/wellness":  ["Log today's mood and sleep", "How has my wellness been this week?", "What's my average sleep this month?"],
+  "/goals":     ["List my active goals", "Update progress on my fitness goal", "Add a new career goal", "What goals am I close to completing?"],
+  "/jobs":      ["What's the status of my applications?", "Add a new job application", "How many jobs have I applied to this week?"],
+  "/dashboard": ["What should I focus on today?", "How am I doing overall?", "What's overdue?", "Give me a quick summary of my week"],
+  "/notes":     ["Summarize today's notes", "What did I write about last week?", "Start today's daily note"],
+  "/freelance": ["What work is in progress?", "Any pending client deliverables?", "Total active project value?"],
+  "/time":      ["Am I tracking time right now?", "How many hours did I log this week?", "Start a new time entry"],
+}
 
 // ── Tool approval card ────────────────────────────────────────────────────────
 type ApprovalResult = { approved: boolean; message: string }
@@ -335,6 +349,7 @@ function chatReducer(state: ChatState, action: ChatAction): ChatState {
 
 // ── Main chat panel ───────────────────────────────────────────────────────────
 export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
+  const pathname = usePathname()
   const resolvedDefault = (
     defaultProvider && (defaultProvider in DEFAULT_MODELS) ? defaultProvider : "anthropic"
   ) as Provider
@@ -361,14 +376,20 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
   // Keep ref in sync
   useEffect(() => { convIdRef.current = conversationId }, [conversationId])
 
-  // Model ref for transport body
+  // Model + pathname refs for transport body (avoids re-creating transport)
   const modelRef = useRef({ provider, modelId })
   useEffect(() => { modelRef.current = { provider, modelId } }, [provider, modelId])
+  const pathnameRef = useRef(pathname)
+  useEffect(() => { pathnameRef.current = pathname }, [pathname])
 
   const transport = useMemo(
     () => new DefaultChatTransport({
       api: "/api/ai/chat",
-      body: () => ({ provider: modelRef.current.provider, model: modelRef.current.modelId }),
+      body: () => ({
+        provider: modelRef.current.provider,
+        model: modelRef.current.modelId,
+        currentPage: pathnameRef.current,
+      }),
     }),
     []
   )
@@ -399,6 +420,13 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
   }, [open])
+
+  // Open from command palette
+  useEffect(() => {
+    function onOpen() { dispatch({ type: "SET_OPEN", open: true }) }
+    window.addEventListener("life-os:open-ai", onOpen)
+    return () => window.removeEventListener("life-os:open-ai", onOpen)
+  }, [])
 
   // Auto-scroll
   useEffect(() => {
@@ -602,10 +630,10 @@ export function ChatPanel({ hasApiKey, defaultProvider }: Props) {
                     <p className="text-xs text-muted-foreground text-center">
                       Ask me to log habits, add todos, track expenses, and more.
                       <br />
-                      <span className="opacity-60 text-[10px]">Ctrl+Alt+B to toggle</span>
+                      <span className="opacity-60 text-[10px]">Ctrl+Alt+B to toggle · Ctrl+K for commands</span>
                     </p>
                     <div className="space-y-2">
-                      {SUGGESTIONS.map((s) => (
+                      {(PAGE_SUGGESTIONS[pathname] ?? DEFAULT_SUGGESTIONS).map((s) => (
                         <motion.button
                           key={s}
                           whileTap={{ scale: 0.98 }}

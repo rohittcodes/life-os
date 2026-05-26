@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator"
 import { VaultProvider } from "@/contexts/vault-context"
 import { VaultBanner } from "@/components/vault/vault-banner"
 import { ChatPanelWrapper } from "@/components/ai/chat-panel-wrapper"
+import { CommandPalette } from "@/components/command-palette"
 import { ThemeToggle } from "@/components/ui/theme-toggle"
 import { createClient } from "@/lib/supabase/server"
 
@@ -47,6 +48,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         </SidebarInset>
       </SidebarProvider>
       <ChatPanelWrapper hasApiKey={hasAiKey} defaultProvider={defaultProvider} />
+      <CommandPalette />
     </VaultProvider>
   )
 }

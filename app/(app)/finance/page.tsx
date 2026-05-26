@@ -4,7 +4,8 @@ export const metadata = { title: "Finance" }
 import { EntryForm } from "@/components/finance/entry-form"
 import { Ledger } from "@/components/finance/ledger"
 import { FinanceChart } from "@/components/finance/finance-chart-lazy"
-import type { FinanceEntry } from "@/lib/types"
+import { BudgetTargets } from "@/components/finance/budget-targets"
+import type { FinanceEntry, FinanceBudget } from "@/lib/types"
 
 export default async function FinancePage() {
   const supabase = await createClient()
@@ -14,13 +15,13 @@ export default async function FinancePage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0]
 
-  const { data: entries = [] } = await supabase
-    .from("finance_entries")
-    .select("*")
-    .eq("user_id", user!.id)
-    .order("entry_date", { ascending: false })
+  const [{ data: entries = [] }, { data: budgetRows = [] }] = await Promise.all([
+    supabase.from("finance_entries").select("*").eq("user_id", user!.id).order("entry_date", { ascending: false }),
+    supabase.from("finance_budgets").select("*").eq("user_id", user!.id).order("category"),
+  ])
 
   const allEntries = entries ?? []
+  const allBudgets: FinanceBudget[] = budgetRows ?? []
 
   const thisMonth = allEntries.filter(
     (e: FinanceEntry) => e.entry_date >= monthStart && e.entry_date <= monthEnd
@@ -102,6 +103,12 @@ export default async function FinancePage() {
           </div>
         </div>
       )}
+
+      <BudgetTargets
+        budgets={allBudgets}
+        categories={Array.from(categories.entries()).map(([category, spent]) => ({ category, spent }))}
+        month={monthName}
+      />
 
       {allEntries.length > 0 && <FinanceChart entries={allEntries} />}
 

@@ -59,3 +59,26 @@ export async function deleteTask(taskId: string, projectId: string) {
   await supabase.from("product_tasks").delete().eq("id", taskId).eq("user_id", user.id)
   revalidatePath(`/projects/${projectId}`)
 }
+
+export async function addStep(taskId: string, projectId: string, fd: FormData) {
+  const { supabase, user } = await requireUser()
+  const title = (fd.get("title") as string)?.trim()
+  if (!title) return
+  const { data: last } = await supabase.from("task_steps")
+    .select("sort_order").eq("task_id", taskId).order("sort_order", { ascending: false }).limit(1).single()
+  const sort_order = (last?.sort_order ?? -1) + 1
+  await supabase.from("task_steps").insert({ user_id: user.id, task_id: taskId, title, sort_order })
+  revalidatePath(`/projects/${projectId}`)
+}
+
+export async function toggleStep(stepId: string, done: boolean, projectId: string) {
+  const { supabase, user } = await requireUser()
+  await supabase.from("task_steps").update({ done }).eq("id", stepId).eq("user_id", user.id)
+  revalidatePath(`/projects/${projectId}`)
+}
+
+export async function deleteStep(stepId: string, projectId: string) {
+  const { supabase, user } = await requireUser()
+  await supabase.from("task_steps").delete().eq("id", stepId).eq("user_id", user.id)
+  revalidatePath(`/projects/${projectId}`)
+}

@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
+import { useQuery } from "@tanstack/react-query"
 import {
   Sidebar, SidebarContent, SidebarFooter, SidebarGroup,
   SidebarGroupContent, SidebarGroupLabel, SidebarHeader,
@@ -16,7 +17,7 @@ import {
   Wallet, BookOpen, PenLine, StickyNote, Target,
   Settings, LogOut, ListTodo, HeartPulse, Timer,
   Library, Sunrise, Brain, Sun, Moon, ChevronRight,
-  MessageSquare, UserCircle,
+  MessageSquare, UserCircle, CalendarCheck,
 } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
@@ -24,6 +25,7 @@ import { motion } from "motion/react"
 import { cn } from "@/lib/utils"
 
 const coreNav = [
+  { href: "/today",     label: "Today",     icon: CalendarCheck },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/habits",    label: "Habits",    icon: CheckCircle2 },
   { href: "/todos",     label: "To-Do",     icon: ListTodo },
@@ -56,10 +58,30 @@ const lifeNav = [
   { href: "/blog",      label: "Blog",           icon: PenLine },
 ]
 
+function useOverdueCount() {
+  const { data = 0 } = useQuery({
+    queryKey: ["overdue-count"],
+    queryFn: async () => {
+      const supabase = createClient()
+      const today = new Date().toISOString().split("T")[0]
+      const { count } = await supabase
+        .from("todos")
+        .select("id", { count: "exact", head: true })
+        .eq("done", false)
+        .lt("due_date", today)
+      return count ?? 0
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+  })
+  return data
+}
+
 export function AppSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const supabase = createClient()
+  const overdueCount = useOverdueCount()
   const { resolvedTheme, setTheme } = useTheme()
   const { isMobile, setOpenMobile } = useSidebar()
   const [dailyOpen, setDailyOpen] = useState(false)
@@ -125,6 +147,11 @@ export function AppSidebar() {
                     <Link href={href} onClick={closeMobile}>
                       <Icon className="shrink-0" />
                       <span>{label}</span>
+                      {label === "To-Do" && overdueCount > 0 && (
+                        <span className="ml-auto flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white group-data-[collapsible=icon]:hidden">
+                          {overdueCount > 99 ? "99+" : overdueCount}
+                        </span>
+                      )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

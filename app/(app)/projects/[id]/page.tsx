@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
 import { ProjectBoard } from "@/components/projects/project-board"
-import type { Project, ProductTask } from "@/lib/types"
+import type { Project, ProductTask, TaskStep } from "@/lib/types"
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -18,6 +18,11 @@ export default async function ProjectPage({ params }: Props) {
   if (!project) notFound()
 
   const allTasks: ProductTask[] = tasks ?? []
+  const taskIds = allTasks.map((t) => t.id)
+  const { data: stepsData } = taskIds.length > 0
+    ? await supabase.from("task_steps").select("*").in("task_id", taskIds).order("sort_order")
+    : { data: [] }
+  const allSteps: TaskStep[] = stepsData ?? []
   const total = allTasks.length
   const done = allTasks.filter((t) => t.status === "done").length
   const inProgress = allTasks.filter((t) => t.status === "in_progress").length
@@ -73,6 +78,7 @@ export default async function ProjectPage({ params }: Props) {
         project={project as Project}
         tasks={allTasks}
         milestones={milestones}
+        steps={allSteps}
       />
     </div>
   )

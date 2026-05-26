@@ -106,6 +106,12 @@ export interface Todo {
   id: string; user_id: string; title: string; done: boolean
   priority: "low" | "normal" | "high"; due_date: string | null
   category: string | null; created_at: string
+  brief: string | null; progress: number
+  goal_id: string | null; recurrence: "none" | "daily" | "weekly" | "monthly"
+}
+
+export interface FinanceBudget {
+  id: string; user_id: string; category: string; monthly_limit: number; created_at: string
 }
 
 export interface WellnessLog {
@@ -150,4 +156,9 @@ export interface RoutineLog {
   id: string; user_id: string; log_date: string
   completed_item_ids: string[]; notes: string | null
   mood_start: number | null; created_at: string
+}
+
+export interface TaskStep {
+  id: string; task_id: string; user_id: string
+  title: string; done: boolean; sort_order: number; created_at: string
 }

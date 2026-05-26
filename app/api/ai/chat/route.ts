@@ -60,12 +60,37 @@ function blockedResult(toolName: string) {
   } as const
 }
 
+// ── Page labels for page-aware context ───────────────────────────────────────
+const PAGE_LABELS: Record<string, string> = {
+  "/dashboard":  "Dashboard (overview of all life areas)",
+  "/habits":     "Habits tracker",
+  "/todos":      "To-Do list",
+  "/notes":      "Daily Notes",
+  "/goals":      "Goals",
+  "/finance":    "Finance tracker",
+  "/wellness":   "Wellness log",
+  "/jobs":       "Job applications board",
+  "/freelance":  "Work Pipeline",
+  "/projects":   "Work Tasks / Sprint board",
+  "/product":    "Product tasks",
+  "/time":       "Time Tracker",
+  "/knowledge":  "Knowledge base",
+  "/bookmarks":  "Library / Bookmarks",
+  "/contacts":   "People & Subscriptions",
+  "/blog":       "Blog",
+  "/review":     "Weekly Review",
+  "/routine":    "Morning Routine",
+  "/chats":      "AI Chats history",
+  "/settings":   "Settings",
+}
+
 // ── Route ─────────────────────────────────────────────────────────────────────
 export async function POST(req: Request) {
   const body = await req.json()
   const messages = body.messages ?? []
   const bodyProvider: string | undefined = body.provider
   const bodyModel: string | undefined = body.model
+  const currentPage: string | undefined = body.currentPage
 
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -184,6 +209,7 @@ TIMER: ${activeTimer ? `RUNNING — "${activeTimer.description}" since ${new Dat
 
 RECENT NOTES: ${recentNotes?.map(n => n.note_date).join(", ") || "none"}
 ${agentMemory.length > 0 ? `\nREMEMBERED:\n${agentMemory.map(m => `• ${m}`).join("\n")}` : ""}
+${currentPage ? `\nCURRENT VIEW: User has the ${PAGE_LABELS[currentPage] ?? currentPage} page open — lean into context relevant to that section.` : ""}
 
 ━━ INSTRUCTIONS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
