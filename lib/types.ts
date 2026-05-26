@@ -147,6 +147,12 @@ export interface KnowledgeArticle {
   pinned: boolean; created_at: string; updated_at: string
 }
 
+export interface ScreenTimeEntry {
+  id: string; user_id: string; log_date: string
+  source: string; app_name: string; duration_seconds: number
+  category: string; synced_at: string
+}
+
 export interface RoutineItem {
   id: string; user_id: string; title: string
   icon: string; sort_order: number; active: boolean; created_at: string

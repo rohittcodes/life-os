@@ -4,6 +4,7 @@ export const metadata = { title: "Time Tracker" }
 import { TimerControl } from "@/components/time/timer-control"
 import { TimeChart } from "@/components/time/time-chart"
 import { TimeEntryRow } from "@/components/time/time-entry-row"
+import { ScreenTimeSection } from "@/components/time/screen-time-section"
 import type { TimeEntry, Project } from "@/lib/types"
 
 function formatDuration(minutes: number | null): string {
@@ -83,6 +84,9 @@ export default async function TimePage() {
           </div>
         </div>
       )}
+      <div className="border-t border-border/50 pt-6">
+        <ScreenTimeSection />
+      </div>
     </div>
   )
 }

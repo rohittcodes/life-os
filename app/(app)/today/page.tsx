@@ -81,7 +81,7 @@ export default async function TodayPage() {
   const habitsTotal = 3 + allDefs.length
 
   return (
-    <div className="space-y-5 p-4 md:p-6 max-w-2xl">
+    <div className="space-y-5 p-4 md:p-6 w-full max-w-none">
 
       {/* Header */}
       <div className="flex items-start justify-between">
