@@ -8,6 +8,6 @@ const FinanceChartInner = dynamic(
   { ssr: false, loading: () => <div className="h-48 w-full animate-pulse rounded-xl bg-muted" /> }
 )
 
-export function FinanceChart({ entries }: { entries: FinanceEntry[] }) {
-  return <FinanceChartInner entries={entries} />
+export function FinanceChart({ entries, currency }: { entries: FinanceEntry[]; currency?: string }) {
+  return <FinanceChartInner entries={entries} currency={currency} />
 }

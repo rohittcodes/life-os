@@ -70,6 +70,25 @@ export default async function ReviewPage() {
 
   const weekLabel = new Date(weekStart + "T00:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "long" })
 
+  const weekContext = {
+    gymDays, englishDays, dietDays, fullDays,
+    completedTodos, createdTodos: allTodos.length,
+    weekIncome, weekExpense,
+    avgMood: avgMood as string | null,
+    avgSleep: avgSleep as string | null,
+    activeGoals: activeGoals.slice(0, 6).map((g: { title: string; progress: number }) => ({
+      title: g.title, progress: g.progress,
+    })),
+  }
+
+  // Check if user has any AI key configured
+  const { data: aiProfile } = await supabase
+    .from("user_profiles")
+    .select("ai_anthropic_key, ai_openai_key, ai_gemini_key, ai_groq_key")
+    .eq("id", user!.id)
+    .single()
+  const hasAiKey = !!(aiProfile?.ai_anthropic_key || aiProfile?.ai_openai_key || aiProfile?.ai_gemini_key || aiProfile?.ai_groq_key)
+
   return (
     <div className="p-4 md:p-6">
       <div className="mb-6">
@@ -187,7 +206,7 @@ export default async function ReviewPage() {
 
         {/* Review form */}
         <div className="lg:col-span-3">
-          <ReviewForm existing={currentReview} weekStart={weekStart} />
+          <ReviewForm existing={currentReview} weekStart={weekStart} weekContext={weekContext} hasAiKey={hasAiKey} />
         </div>
       </div>
 

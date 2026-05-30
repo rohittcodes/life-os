@@ -9,9 +9,10 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
+import { formatAmount, formatAmountCompact } from "@/lib/currency"
 import type { FinanceEntry } from "@/lib/types"
 
-interface Props { entries: FinanceEntry[] }
+interface Props { entries: FinanceEntry[]; currency?: string }
 
 const chartConfig = {
   income: { label: "Income", color: "hsl(var(--chart-1))" },
@@ -19,7 +20,7 @@ const chartConfig = {
   net: { label: "Net Savings", color: "hsl(var(--chart-3))" },
 } satisfies ChartConfig
 
-export function FinanceChart({ entries }: Props) {
+export function FinanceChart({ entries, currency = "INR" }: Props) {
   const now = new Date()
   const months = Array.from({ length: 6 }, (_, i) => {
     const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1)
@@ -54,18 +55,18 @@ export function FinanceChart({ entries }: Props) {
               </linearGradient>
             </defs>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 11 }}
-              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tickFormatter={(v) => formatAmountCompact(v as number, currency)}
               width={48}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value) => `₹${Number(value).toLocaleString("en-IN")}`}
+                  formatter={(value) => formatAmount(Number(value), currency)}
                 />
               }
             />
@@ -94,18 +95,18 @@ export function FinanceChart({ entries }: Props) {
         <ChartContainer config={chartConfig} className="h-52 w-full">
           <BarChart data={monthlyData} margin={{ left: 0, right: 0, top: 4 }}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 11 }}
-              tickFormatter={(v) => `₹${(v / 1000).toFixed(0)}k`}
+              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+              tickFormatter={(v) => formatAmountCompact(v as number, currency)}
               width={48}
             />
             <ChartTooltip
               content={
                 <ChartTooltipContent
-                  formatter={(value) => `₹${Number(value).toLocaleString("en-IN")}`}
+                  formatter={(value) => formatAmount(Number(value), currency)}
                 />
               }
             />

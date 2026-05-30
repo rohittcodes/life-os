@@ -27,9 +27,6 @@ export async function upsertHabitLog(formData: FormData) {
   )
 
   if (error) throw new Error(error.message)
-
-  revalidatePath("/habits")
-  revalidatePath("/dashboard")
 }
 
 export async function toggleCustomHabit(date: string, habitId: string, done: boolean) {
@@ -59,7 +56,6 @@ export async function toggleCustomHabit(date: string, habitId: string, done: boo
     })
   }
 
-  revalidatePath("/habits")
 }
 
 export async function createHabitDefinition(formData: FormData) {

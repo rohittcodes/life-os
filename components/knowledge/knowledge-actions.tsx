@@ -2,6 +2,7 @@
 
 import { useTransition } from "react"
 import { togglePin, deleteArticle } from "@/app/(app)/knowledge/actions"
+import { ConfirmButton } from "@/components/ui/confirm-button"
 import type { KnowledgeArticle } from "@/lib/types"
 
 export function KnowledgeActions({ article }: { article: KnowledgeArticle }) {
@@ -16,12 +17,19 @@ export function KnowledgeActions({ article }: { article: KnowledgeArticle }) {
       >
         {article.pinned ? "📌" : "📍"}
       </button>
-      <button
-        onClick={(e) => { e.preventDefault(); if (confirm("Delete this article?")) startTransition(() => deleteArticle(article.id)) }}
-        className="text-muted-foreground hover:text-destructive text-xs px-1"
+      <ConfirmButton
+        title="Delete article"
+        description="This article will be permanently removed from your knowledge base."
+        confirmLabel="Delete"
+        onConfirm={() => startTransition(() => deleteArticle(article.id))}
       >
-        ✕
-      </button>
+        <button
+          onClick={(e) => e.preventDefault()}
+          className="text-muted-foreground hover:text-destructive text-xs px-1"
+        >
+          ✕
+        </button>
+      </ConfirmButton>
     </div>
   )
 }

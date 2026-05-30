@@ -8,6 +8,7 @@ import {
   type DragStartEvent, type DragEndEvent,
 } from "@dnd-kit/core"
 import { X, GripVertical, AlertTriangle } from "lucide-react"
+import { JobEditSheet } from "./job-edit-sheet"
 import { cn } from "@/lib/utils"
 import type { JobApplication, JobStatus } from "@/lib/types"
 
@@ -64,12 +65,15 @@ function JobCardContent({
           <div className="flex items-start justify-between gap-1">
             <div className="font-medium leading-snug truncate">{job.company}</div>
             {!isOverlay && (
-              <button
-                onClick={onDelete}
-                className="shrink-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
+              <div className="flex items-center gap-1 shrink-0">
+                <JobEditSheet job={job} />
+                <button
+                  onClick={onDelete}
+                  className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 sm:opacity-60 transition-all p-0.5"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
             )}
           </div>
           <div className="mt-0.5 text-xs text-muted-foreground truncate">{job.role}</div>
@@ -92,7 +96,7 @@ function JobCardContent({
 
       {/* Status move buttons */}
       {!isOverlay && (
-        <div className="mt-2.5 flex flex-wrap gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="mt-2.5 flex flex-wrap gap-1 opacity-0 group-hover:opacity-100 sm:opacity-100 transition-opacity">
           {otherCols.map((c) => (
             <button
               key={c.status}

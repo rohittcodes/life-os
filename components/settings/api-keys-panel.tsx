@@ -5,6 +5,7 @@ import { createApiKey, revokeApiKey } from "@/app/(app)/settings/actions"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { ConfirmButton } from "@/components/ui/confirm-button"
 import type { ApiKey } from "@/lib/types"
 
 interface Props { keys: ApiKey[] }
@@ -28,7 +29,6 @@ export function ApiKeysPanel({ keys }: Props) {
   }
 
   function handleRevoke(id: string) {
-    if (!confirm("Revoke this key? Any apps using it will stop working.")) return
     startTransition(() => revokeApiKey(id))
   }
 
@@ -92,9 +92,16 @@ export function ApiKeysPanel({ keys }: Props) {
                   {key.last_used_at && ` · Last used ${new Date(key.last_used_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}`}
                 </p>
               </div>
-              <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive" onClick={() => handleRevoke(key.id)}>
-                Revoke
-              </Button>
+              <ConfirmButton
+                title="Revoke API key?"
+                description="Any apps using this key will stop working immediately."
+                confirmLabel="Revoke"
+                onConfirm={() => handleRevoke(key.id)}
+              >
+                <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+                  Revoke
+                </Button>
+              </ConfirmButton>
             </div>
           ))}
         </div>

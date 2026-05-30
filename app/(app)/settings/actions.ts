@@ -43,6 +43,22 @@ export async function createApiKey(formData: FormData): Promise<{ key: string } 
   return { key: full }
 }
 
+export async function saveAuthorProfile(formData: FormData) {
+  const { supabase, user } = await requireUser()
+  const username = (formData.get("username") as string)?.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "") || null
+  await supabase
+    .from("user_profiles")
+    .update({
+      display_name: (formData.get("display_name") as string)?.trim() || null,
+      author_bio:   (formData.get("author_bio")   as string)?.trim() || null,
+      avatar_url:   (formData.get("avatar_url")   as string)?.trim() || null,
+      website_url:  (formData.get("website_url")  as string)?.trim() || null,
+      username,
+    })
+    .eq("id", user.id)
+  revalidatePath("/settings")
+}
+
 export async function revokeApiKey(id: string) {
   const { supabase, user } = await requireUser()
   await supabase
@@ -51,4 +67,31 @@ export async function revokeApiKey(id: string) {
     .eq("id", id)
     .eq("user_id", user.id)
   revalidatePath("/settings")
+}
+
+export async function checkUsernameAvailability(username: string): Promise<{ available: boolean; reason?: string }> {
+  const cleaned = username.trim().toLowerCase().replace(/[^a-z0-9_-]/g, "")
+  if (!cleaned || cleaned.length < 3) return { available: false, reason: "min 3 characters" }
+  if (cleaned.length > 30) return { available: false, reason: "max 30 characters" }
+
+  const { supabase, user } = await requireUser()
+  const { data } = await supabase
+    .from("user_profiles")
+    .select("id")
+    .eq("username", cleaned)
+    .neq("id", user.id)
+    .maybeSingle()
+
+  return { available: !data }
+}
+
+export async function saveCurrencySettings(formData: FormData) {
+  const { supabase, user } = await requireUser()
+  const currency = (formData.get("currency") as string)?.trim().toUpperCase() || "INR"
+  await supabase
+    .from("user_profiles")
+    .update({ currency })
+    .eq("id", user.id)
+  revalidatePath("/settings")
+  revalidatePath("/finance")
 }

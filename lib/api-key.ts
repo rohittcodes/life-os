@@ -26,28 +26,33 @@ export async function hashKey(key: string): Promise<string> {
 export async function verifyApiKey(
   authHeader: string | null
 ): Promise<boolean> {
-  if (!authHeader?.startsWith("Bearer ")) return false
+  return (await verifyApiKeyGetUser(authHeader)) !== null
+}
+
+export async function verifyApiKeyGetUser(
+  authHeader: string | null
+): Promise<string | null> {
+  if (!authHeader?.startsWith("Bearer ")) return null
   const key = authHeader.slice(7).trim()
-  if (!key.startsWith("los_")) return false
+  if (!key.startsWith("los_")) return null
 
   const hash = await hashKey(key)
   const supabase = await createClient()
 
   const { data } = await supabase
     .from("api_keys")
-    .select("id")
+    .select("id, user_id")
     .eq("key_hash", hash)
     .eq("revoked", false)
     .single()
 
-  if (!data) return false
+  if (!data) return null
 
-  // Update last_used_at asynchronously (don't await)
   supabase
     .from("api_keys")
     .update({ last_used_at: new Date().toISOString() })
     .eq("key_hash", hash)
     .then(() => {})
 
-  return true
+  return data.user_id
 }

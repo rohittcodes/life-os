@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react"
 import { updateGoalProgress, toggleMilestone, addMilestone, deleteGoal } from "@/app/(app)/goals/actions"
 import { Input } from "@/components/ui/input"
+import { ConfirmButton } from "@/components/ui/confirm-button"
 import type { Goal, GoalMilestone } from "@/lib/types"
 
 interface GoalCardProps {
@@ -69,12 +70,16 @@ export function GoalCard({ goal, milestones, categoryColors, compact }: GoalCard
             </p>
           )}
         </div>
-        <button
-          onClick={() => { if (confirm("Delete this goal?")) startTransition(() => deleteGoal(goal.id)) }}
-          className="shrink-0 text-muted-foreground hover:text-destructive transition-colors text-xs"
+        <ConfirmButton
+          title="Delete goal"
+          description="All milestones linked to this goal will also be deleted."
+          confirmLabel="Delete"
+          onConfirm={() => startTransition(() => deleteGoal(goal.id))}
         >
-          Delete
-        </button>
+          <button className="shrink-0 text-muted-foreground hover:text-destructive transition-colors text-xs">
+            Delete
+          </button>
+        </ConfirmButton>
       </div>
 
       {/* Progress slider */}

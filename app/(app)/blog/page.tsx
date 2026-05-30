@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 
 export const metadata = { title: "Blog" }
 import { createClient } from "@/lib/supabase/server"
@@ -39,7 +40,19 @@ export default async function BlogAdminPage() {
       ) : (
         <div className="space-y-3">
           {allPosts.map((post) => (
-            <div key={post.id} className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card px-4 py-3">
+            <div key={post.id} className="flex items-center gap-4 rounded-xl border border-border bg-card px-4 py-3">
+              {/* Cover thumbnail */}
+              {post.cover_image && (
+                <div className="relative h-14 w-20 shrink-0 overflow-hidden rounded-lg border border-border bg-muted">
+                  <Image
+                    src={post.cover_image}
+                    alt={post.title}
+                    fill
+                    className="object-cover"
+                    unoptimized
+                  />
+                </div>
+              )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2">
                   <Link href={`/blog/${post.id}`} className="font-medium hover:underline truncate">
@@ -53,6 +66,9 @@ export default async function BlogAdminPage() {
                     {post.published ? "Published" : "Draft"}
                   </span>
                 </div>
+                {post.excerpt && (
+                  <p className="mt-0.5 text-xs text-muted-foreground line-clamp-1">{post.excerpt}</p>
+                )}
                 <div className="mt-0.5 flex items-center gap-3 text-xs text-muted-foreground">
                   <span>/{post.slug}</span>
                   {post.tags.length > 0 && <span>{post.tags.join(", ")}</span>}

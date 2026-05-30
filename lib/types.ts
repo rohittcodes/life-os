@@ -54,7 +54,9 @@ export interface WeeklyReview {
 export interface BlogPost {
   id: string; user_id: string; title: string; slug: string
   content: string | null; excerpt: string | null; published: boolean
-  published_at: string | null; tags: string[]; created_at: string; updated_at: string
+  published_at: string | null; tags: string[]
+  cover_image: string | null
+  created_at: string; updated_at: string
 }
 
 export interface ApiKey {

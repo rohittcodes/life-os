@@ -62,11 +62,11 @@ export function TimeChart({ entries, projects }: Props) {
         <ChartContainer config={chartConfig} className="h-52 w-full">
           <BarChart data={dailyData} margin={{ left: 0, right: 0, top: 4 }}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+            <XAxis dataKey="label" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
             <YAxis
               tickLine={false}
               axisLine={false}
-              tick={{ fontSize: 11 }}
+              tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
               tickFormatter={(v) => `${v}h`}
               width={32}
             />
@@ -93,7 +93,7 @@ export function TimeChart({ entries, projects }: Props) {
                 type="number"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 tickFormatter={(v) => `${v}h`}
               />
               <YAxis
@@ -101,7 +101,7 @@ export function TimeChart({ entries, projects }: Props) {
                 type="category"
                 tickLine={false}
                 axisLine={false}
-                tick={{ fontSize: 11 }}
+                tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
                 width={100}
               />
               <ChartTooltip

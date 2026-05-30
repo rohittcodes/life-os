@@ -4,6 +4,8 @@ export const metadata = { title: "Settings" }
 import { ApiKeysPanel } from "@/components/settings/api-keys-panel"
 import { AiSettings } from "@/components/settings/ai-settings"
 import { PwaSettings } from "@/components/settings/pwa-settings"
+import { AuthorSettings } from "@/components/settings/author-settings"
+import { CurrencySettings } from "@/components/settings/currency-settings"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { ApiKey } from "@/lib/types"
 
@@ -13,7 +15,7 @@ export default async function SettingsPage() {
 
   const [{ data: keys = [] }, { data: profile }] = await Promise.all([
     supabase.from("api_keys").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }),
-    supabase.from("user_profiles").select("ai_provider, ai_anthropic_key, ai_openai_key, ai_gemini_key, ai_groq_key").eq("id", user!.id).single(),
+    supabase.from("user_profiles").select("ai_provider, ai_anthropic_key, ai_openai_key, ai_gemini_key, ai_groq_key, display_name, author_bio, avatar_url, website_url, username, currency").eq("id", user!.id).single(),
   ])
 
   return (
@@ -27,6 +29,8 @@ export default async function SettingsPage() {
         <TabsList>
           <TabsTrigger value="ai">AI Assistant</TabsTrigger>
           <TabsTrigger value="app">App</TabsTrigger>
+          <TabsTrigger value="author">Author</TabsTrigger>
+          <TabsTrigger value="preferences">Preferences</TabsTrigger>
           <TabsTrigger value="api">API Keys</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
@@ -47,16 +51,33 @@ export default async function SettingsPage() {
           <PwaSettings />
         </TabsContent>
 
+        <TabsContent value="author" className="mt-6">
+          <AuthorSettings
+            displayName={profile?.display_name ?? ""}
+            authorBio={profile?.author_bio ?? ""}
+            avatarUrl={profile?.avatar_url ?? ""}
+            websiteUrl={profile?.website_url ?? ""}
+            username={profile?.username ?? ""}
+          />
+        </TabsContent>
+
+        <TabsContent value="preferences" className="mt-6">
+          <CurrencySettings currency={profile?.currency ?? "INR"} />
+        </TabsContent>
+
         <TabsContent value="api" className="mt-6 space-y-4">
           <div className="space-y-1">
             <h2 className="font-medium">API Keys</h2>
             <p className="text-sm text-muted-foreground">
-              Generate keys to access your published blog posts via the API.
+              Generate keys to access your data via the API or connect AI agents via the MCP server.
               Pass the key as <code className="font-mono text-xs">Authorization: Bearer &lt;key&gt;</code>.
             </p>
             <div className="mt-1 rounded-lg bg-muted px-3 py-2 font-mono text-xs space-y-1">
+              <p className="text-muted-foreground font-sans text-[11px] font-medium mb-1">Blog API</p>
               <p>GET /api/blog</p>
               <p>GET /api/blog/:slug</p>
+              <p className="text-muted-foreground font-sans text-[11px] font-medium mt-2 mb-1">MCP Server (AI agents)</p>
+              <p>POST /api/mcp  <span className="text-muted-foreground">— JSON-RPC 2.0</span></p>
             </div>
           </div>
           <ApiKeysPanel keys={(keys ?? []) as ApiKey[]} />

@@ -5,6 +5,7 @@ import { EntryForm } from "@/components/finance/entry-form"
 import { Ledger } from "@/components/finance/ledger"
 import { FinanceChart } from "@/components/finance/finance-chart-lazy"
 import { BudgetTargets } from "@/components/finance/budget-targets"
+import { formatAmount } from "@/lib/currency"
 import type { FinanceEntry, FinanceBudget } from "@/lib/types"
 
 export default async function FinancePage() {
@@ -15,10 +16,13 @@ export default async function FinancePage() {
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split("T")[0]
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split("T")[0]
 
-  const [{ data: entries = [] }, { data: budgetRows = [] }] = await Promise.all([
-    supabase.from("finance_entries").select("*").eq("user_id", user!.id).order("entry_date", { ascending: false }),
+  const [{ data: entries = [] }, { data: budgetRows = [] }, { data: profile }] = await Promise.all([
+    supabase.from("finance_entries").select("*").eq("user_id", user!.id).order("entry_date", { ascending: false }).limit(500),
     supabase.from("finance_budgets").select("*").eq("user_id", user!.id).order("category"),
+    supabase.from("user_profiles").select("currency").eq("id", user!.id).single(),
   ])
+
+  const currency = profile?.currency ?? "INR"
 
   const allEntries = entries ?? []
   const allBudgets: FinanceBudget[] = budgetRows ?? []
@@ -62,15 +66,15 @@ export default async function FinancePage() {
           <h1 className="text-2xl font-semibold">Finance</h1>
           <p className="text-sm text-muted-foreground">{monthName} {now.getFullYear()} · personal ledger</p>
         </div>
-        <EntryForm />
+        <EntryForm currency={currency} />
       </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
-          { label: `${monthName} income`, value: `₹${monthIncome.toLocaleString("en-IN")}`, positive: true },
-          { label: `${monthName} expenses`, value: `₹${monthExpense.toLocaleString("en-IN")}` },
-          { label: `${monthName} net`, value: `₹${Math.abs(monthNet).toLocaleString("en-IN")}`, positive: monthNet >= 0, showSign: true, net: monthNet },
-          { label: "Running balance", value: `₹${Math.abs(balance).toLocaleString("en-IN")}`, positive: balance >= 0 },
+          { label: `${monthName} income`, value: formatAmount(monthIncome, currency), positive: true },
+          { label: `${monthName} expenses`, value: formatAmount(monthExpense, currency) },
+          { label: `${monthName} net`, value: formatAmount(Math.abs(monthNet), currency), positive: monthNet >= 0, showSign: true, net: monthNet },
+          { label: "Running balance", value: formatAmount(Math.abs(balance), currency), positive: balance >= 0 },
         ].map((s) => (
           <div key={s.label} className="rounded-xl border border-border bg-card p-4">
             <div className={`text-2xl font-bold ${s.positive ? "text-green-600 dark:text-green-400" : s.positive === false && s.net !== undefined && s.net < 0 ? "text-red-500" : ""}`}>
@@ -96,7 +100,7 @@ export default async function FinancePage() {
                     <div className="flex-1 h-1.5 overflow-hidden rounded-full bg-muted">
                       <div className="h-full rounded-full bg-foreground/60" style={{ width: `${pct}%` }} />
                     </div>
-                    <span className="w-24 text-right text-xs font-medium">₹{amount.toLocaleString("en-IN")}</span>
+                    <span className="w-24 text-right text-xs font-medium">{formatAmount(amount, currency)}</span>
                   </div>
                 )
               })}
@@ -108,11 +112,12 @@ export default async function FinancePage() {
         budgets={allBudgets}
         categories={Array.from(categories.entries()).map(([category, spent]) => ({ category, spent }))}
         month={monthName}
+        currency={currency}
       />
 
-      {allEntries.length > 0 && <FinanceChart entries={allEntries} />}
+      {allEntries.length > 0 && <FinanceChart entries={allEntries} currency={currency} />}
 
-      <Ledger entries={allEntries} />
+      <Ledger entries={allEntries} currency={currency} />
     </div>
   )
 }

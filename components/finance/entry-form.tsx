@@ -15,7 +15,7 @@ const categoryLabels: Record<string, string> = {
   freelance: "Contract work",
 }
 
-export function EntryForm() {
+export function EntryForm({ currency = "INR" }: { currency?: string }) {
   const [open, setOpen] = useState(false)
   const [type, setType] = useState<"income" | "expense">("expense")
   const [category, setCategory] = useState(expenseCategories[0])
@@ -78,7 +78,7 @@ export function EntryForm() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="amount">Amount (₹)</Label>
+              <Label htmlFor="amount">Amount ({currency})</Label>
               <Input id="amount" name="amount" type="number" step="0.01" required placeholder="5000" />
             </div>
           </div>

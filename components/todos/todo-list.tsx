@@ -8,7 +8,7 @@ import { queryKeys } from "@/lib/query-keys"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { AlertTriangle, ChevronDown, RefreshCw, X, List, LayoutGrid, GripVertical } from "lucide-react"
+import { AlertTriangle, ChevronDown, RefreshCw, X, List, LayoutGrid, GripVertical, ChevronLeft, ChevronRight, RotateCcw } from "lucide-react"
 import {
   DndContext, DragOverlay, PointerSensor, TouchSensor,
   useSensor, useSensors, useDroppable, useDraggable,
@@ -56,6 +56,7 @@ export function TodoList({
   const [view, setView] = useState<"list" | "kanban">("list")
   const [showDone, setShowDone] = useState(false)
   const [priority, setPriority] = useState("normal")
+  const [viewDate, setViewDate] = useState(() => new Date().toISOString().split("T")[0])
   const [goalId, setGoalId] = useState("none")
   const [recurrence, setRecurrence] = useState("none")
 
@@ -168,11 +169,30 @@ export function TodoList({
   // ─── Derived data ─────────────────────────────────────────────────
 
   const today = new Date().toISOString().split("T")[0]
+  const isViewingToday = viewDate === today
+
+  function shiftDate(n: number) {
+    const d = new Date(viewDate + "T12:00:00")
+    d.setDate(d.getDate() + n)
+    setViewDate(d.toISOString().split("T")[0])
+  }
+
+  function displayViewDate(d: string) {
+    if (d === today) return "Today"
+    const yesterday = new Date(today + "T12:00:00")
+    yesterday.setDate(yesterday.getDate() - 1)
+    if (d === yesterday.toISOString().split("T")[0]) return "Yesterday"
+    const tomorrow = new Date(today + "T12:00:00")
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    if (d === tomorrow.toISOString().split("T")[0]) return "Tomorrow"
+    return new Date(d + "T12:00:00").toLocaleDateString("en-IN", { day: "numeric", month: "short" })
+  }
+
   const pending = todos.filter((t) => !t.done)
   const done = todos.filter((t) => t.done)
-  const overdue = pending.filter((t) => t.due_date && t.due_date < today)
-  const todayTodos = pending.filter((t) => t.due_date === today)
-  const upcoming = pending.filter((t) => !t.due_date || t.due_date > today)
+  const overdue = pending.filter((t) => t.due_date && t.due_date < viewDate)
+  const todayTodos = pending.filter((t) => t.due_date === viewDate)
+  const upcoming = pending.filter((t) => !t.due_date || t.due_date > viewDate)
 
   const sharedHandlers = {
     onToggle: (id: string, doneVal: boolean) => toggleMutation.mutate({ id, done: doneVal }),
@@ -229,9 +249,43 @@ export function TodoList({
         </div>
       </form>
 
-      {/* View toggle */}
-      <div className="flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">{todos.length} tasks</span>
+      {/* Date nav + view toggle */}
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        {/* Date navigator */}
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center rounded-lg border border-border overflow-hidden">
+            <button
+              onClick={() => shiftDate(-1)}
+              className="px-2 py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <input
+              type="date"
+              value={viewDate}
+              max={today}
+              onChange={(e) => e.target.value && setViewDate(e.target.value)}
+              className="px-1 py-1.5 text-xs bg-transparent outline-none cursor-pointer text-foreground [color-scheme:light] dark:[color-scheme:dark] border-x border-border"
+            />
+            <button
+              onClick={() => shiftDate(1)}
+              className="px-2 py-1.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+          </div>
+          <span className="text-xs font-medium text-muted-foreground">{displayViewDate(viewDate)}</span>
+          {!isViewingToday && (
+            <button
+              onClick={() => setViewDate(today)}
+              className="flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            >
+              <RotateCcw className="h-3 w-3" />
+              Today
+            </button>
+          )}
+        </div>
+
         <div className="flex items-center rounded-lg border border-border bg-muted p-0.5">
           <button
             onClick={() => setView("list")}
@@ -277,7 +331,7 @@ export function TodoList({
               />
             )}
             {todayTodos.length > 0 && (
-              <Section key="today" label="Today" todos={todayTodos} {...sharedHandlers} />
+              <Section key="today" label={displayViewDate(viewDate)} todos={todayTodos} {...sharedHandlers} />
             )}
             {upcoming.length > 0 && (
               <Section key="upcoming" label="Upcoming" todos={upcoming} {...sharedHandlers} />

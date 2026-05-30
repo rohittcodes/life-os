@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useTransition } from "react"
 import { deletePost, togglePublish } from "@/app/(app)/blog/actions"
 import { Button } from "@/components/ui/button"
+import { ConfirmButton } from "@/components/ui/confirm-button"
 import type { BlogPost } from "@/lib/types"
 
 export function BlogPostActions({ post }: { post: BlogPost }) {
@@ -26,18 +27,16 @@ export function BlogPostActions({ post }: { post: BlogPost }) {
           <Link href={`/p/${post.slug}`} target="_blank">View ↗</Link>
         </Button>
       )}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-muted-foreground hover:text-destructive"
-        onClick={() => {
-          if (confirm("Delete this post?")) {
-            startTransition(() => deletePost(post.id))
-          }
-        }}
+      <ConfirmButton
+        title="Delete post"
+        description="This will permanently delete the post and cannot be undone."
+        confirmLabel="Delete"
+        onConfirm={() => startTransition(() => deletePost(post.id))}
       >
-        Delete
-      </Button>
+        <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-destructive">
+          Delete
+        </Button>
+      </ConfirmButton>
     </div>
   )
 }

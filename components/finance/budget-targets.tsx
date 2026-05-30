@@ -4,18 +4,20 @@ import { useState, useTransition } from "react"
 import { upsertBudget, deleteBudget } from "@/app/(app)/finance/budgets/actions"
 import { Plus, X, Pencil } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { formatAmount, currencySymbol } from "@/lib/currency"
 import type { FinanceBudget } from "@/lib/types"
 
 interface Props {
   budgets: FinanceBudget[]
   categories: { category: string; spent: number }[]
   month: string
+  currency?: string
 }
 
 const barColor = (pct: number) =>
   pct >= 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-foreground/70"
 
-export function BudgetTargets({ budgets, categories, month }: Props) {
+export function BudgetTargets({ budgets, categories, month, currency = "INR" }: Props) {
   const [editing, setEditing] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
   const [, startTransition] = useTransition()
@@ -69,7 +71,7 @@ export function BudgetTargets({ budgets, categories, month }: Props) {
           <input
             name="limit"
             type="number"
-            placeholder="₹ limit"
+            placeholder={`${currencySymbol(currency)} limit`}
             className="w-24 h-8 rounded-lg border border-border bg-background px-3 text-xs focus:outline-none focus:ring-1 focus:ring-ring"
           />
           <button type="submit" className="h-8 rounded-lg bg-foreground text-background px-3 text-xs font-medium hover:opacity-90 transition-opacity">
@@ -109,12 +111,12 @@ export function BudgetTargets({ budgets, categories, month }: Props) {
                 </div>
                 <div className="flex items-center gap-2 text-xs">
                   <span className={cn("font-medium", pct >= 100 ? "text-red-500" : pct >= 80 ? "text-amber-500" : "")}>
-                    ₹{spent.toLocaleString("en-IN")}
+                    {formatAmount(spent, currency)}
                   </span>
                   {budget && (
                     <>
                       <span className="text-muted-foreground">/</span>
-                      <span className="text-muted-foreground">₹{budget.monthly_limit.toLocaleString("en-IN")}</span>
+                      <span className="text-muted-foreground">{formatAmount(budget.monthly_limit, currency)}</span>
                       <button
                         onClick={() => handleDelete(budget.id)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive ml-1"

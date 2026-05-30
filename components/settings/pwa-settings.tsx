@@ -82,6 +82,8 @@ export function PwaSettings() {
 
       if (permission === "granted") {
         registration.active?.postMessage({ type: "SHOW_TEST_NOTIFICATION" })
+        // Trigger push subscription registration via PwaRuntime listener
+        window.dispatchEvent(new CustomEvent("life-os-notification-preferences-changed"))
       }
     } finally {
       setLoading(false)

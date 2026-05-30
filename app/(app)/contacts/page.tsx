@@ -13,8 +13,8 @@ export default async function ContactsPage() {
   const { data: { user } } = await supabase.auth.getUser()
 
   const [{ data: contacts }, { data: subs }] = await Promise.all([
-    supabase.from("contacts").select("*").eq("user_id", user!.id).order("name"),
-    supabase.from("subscriptions").select("*").eq("user_id", user!.id).order("name"),
+    supabase.from("contacts").select("*").eq("user_id", user!.id).order("name").limit(300),
+    supabase.from("subscriptions").select("*").eq("user_id", user!.id).order("name").limit(100),
   ])
 
   const allContacts: Contact[] = contacts ?? []

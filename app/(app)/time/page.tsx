@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 export const metadata = { title: "Time Tracker" }
 import { TimerControl } from "@/components/time/timer-control"
 import { TimeChart } from "@/components/time/time-chart"
-import { TimeEntryRow } from "@/components/time/time-entry-row"
+import { SessionList } from "@/components/time/session-list"
 import { ScreenTimeSection } from "@/components/time/screen-time-section"
 import type { TimeEntry, Project } from "@/lib/types"
 
@@ -65,25 +65,11 @@ export default async function TimePage() {
 
       <TimeChart entries={allEntries} projects={allProjects} />
 
-      {/* Recent sessions */}
-      {allEntries.filter((e) => e.duration_minutes).length > 0 && (
-        <div>
-          <h2 className="mb-3 text-sm font-medium text-muted-foreground">Recent sessions</h2>
-          <div className="space-y-2">
-            {allEntries.filter((e) => e.duration_minutes).map((entry) => {
-              const proj = entry.project_id ? projectMap.get(entry.project_id) : null
-              return (
-                <TimeEntryRow
-                  key={entry.id}
-                  entry={entry}
-                  projectName={proj ? proj.name : null}
-                  duration={formatDuration(entry.duration_minutes)}
-                />
-              )
-            })}
-          </div>
-        </div>
-      )}
+      {/* Recent sessions with search + filter */}
+      <div>
+        <h2 className="mb-3 text-sm font-medium text-muted-foreground">Recent sessions</h2>
+        <SessionList entries={allEntries} projects={allProjects} />
+      </div>
       <div className="border-t border-border/50 pt-6">
         <ScreenTimeSection />
       </div>

@@ -14,6 +14,7 @@ export default async function JobsPage() {
     .select("*")
     .eq("user_id", user!.id)
     .order("applied_at", { ascending: false })
+    .limit(200)
 
   const total = jobs?.length ?? 0
   const responded = jobs?.filter((j: JobApplication) => !["applied", "ghosted"].includes(j.status)).length ?? 0

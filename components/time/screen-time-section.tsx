@@ -133,8 +133,16 @@ export function ScreenTimeSection() {
 
   // ─── AW fetch helper (proxy on desktop, direct on Android) ────────
 
+  const isAndroidDevice = /android/i.test(navigator.userAgent)
+  const isHttpsPage = window.location.protocol === "https:"
+  // Android HTTPS pages can't fetch http://localhost (mixed content blocked by browser)
+  const androidBlockedByHttps = isAndroidDevice && isHttpsPage
+
   async function awFetch(path: string): Promise<Response> {
-    if (/android/i.test(navigator.userAgent)) {
+    if (androidBlockedByHttps) {
+      throw new Error("ANDROID_HTTPS_BLOCKED")
+    }
+    if (isAndroidDevice) {
       return fetch(`http://localhost:5600/api/0/${path}`)
     }
     return fetch(`${AW_PROXY}?path=${encodeURIComponent(path)}`)
@@ -188,7 +196,7 @@ export function ScreenTimeSection() {
       if (apps.length === 0) throw new Error("No app usage data found for this date")
 
       setSyncMsg(`Saving ${apps.length} apps…`)
-      const isAndroid = /android/i.test(navigator.userAgent)
+      const isAndroid = isAndroidDevice
       const res = await fetch("/api/activity/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -201,7 +209,12 @@ export function ScreenTimeSection() {
       await Promise.all([fetchEntries(date), fetchWeekData()])
     } catch (err) {
       setSyncState("error")
-      setSyncMsg((err as Error).message)
+      const msg = (err as Error).message
+      setSyncMsg(
+        msg === "ANDROID_HTTPS_BLOCKED"
+          ? "Browser sync is blocked on Android HTTPS. Use the Termux script below ↓"
+          : msg
+      )
     }
   }
 
@@ -342,7 +355,7 @@ echo "Done"`
             </div>
           )}
 
-          {isToday && (
+          {isToday && !androidBlockedByHttps && (
             <button
               onClick={syncActivityWatch}
               disabled={syncState === "working"}
@@ -357,6 +370,12 @@ echo "Done"`
               <RefreshCw className={cn("h-3.5 w-3.5 shrink-0", syncState === "working" && "animate-spin")} />
               {syncState === "working" ? syncMsg : syncState === "done" ? "Synced ✓" : "Sync now"}
             </button>
+          )}
+          {androidBlockedByHttps && (
+            <span className="flex items-center gap-1.5 rounded-lg bg-amber-500/10 px-3 py-1.5 text-xs font-medium text-amber-600 dark:text-amber-400">
+              <Smartphone className="h-3.5 w-3.5 shrink-0" />
+              Use Termux script ↓
+            </span>
           )}
         </div>
       </div>

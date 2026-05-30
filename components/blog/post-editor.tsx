@@ -9,6 +9,41 @@ import { Textarea } from "@/components/ui/textarea"
 import { NovelEditor } from "@/components/editor/novel-editor"
 import type { JSONContent } from "novel"
 import type { BlogPost } from "@/lib/types"
+import Image from "next/image"
+
+function CoverImageField({ defaultValue }: { defaultValue: string }) {
+  const [url, setUrl] = useState(defaultValue)
+  const [imgError, setImgError] = useState(false)
+
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor="cover_image">Cover image URL</Label>
+      <Input
+        id="cover_image"
+        name="cover_image"
+        type="url"
+        placeholder="https://example.com/image.jpg"
+        value={url}
+        onChange={(e) => { setUrl(e.target.value); setImgError(false) }}
+      />
+      {url && !imgError && (
+        <div className="relative mt-2 h-40 w-full overflow-hidden rounded-xl border border-border bg-muted">
+          <Image
+            src={url}
+            alt="Cover preview"
+            fill
+            className="object-cover"
+            onError={() => setImgError(true)}
+            unoptimized
+          />
+        </div>
+      )}
+      {url && imgError && (
+        <p className="text-xs text-red-500">Could not load image — check the URL</p>
+      )}
+    </div>
+  )
+}
 
 interface PostEditorProps {
   post?: BlogPost
@@ -76,6 +111,8 @@ export function PostEditor({ post }: PostEditorProps) {
           defaultValue={post?.excerpt ?? ""}
         />
       </div>
+
+      <CoverImageField defaultValue={post?.cover_image ?? ""} />
 
       <div className="space-y-1.5">
         <Label>Content</Label>

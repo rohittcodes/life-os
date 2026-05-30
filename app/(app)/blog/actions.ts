@@ -20,12 +20,29 @@ export async function savePost(formData: FormData, postId?: string) {
   if (!title) return
 
   const rawSlug = (formData.get("slug") as string)?.trim()
-  const slug = rawSlug ? toSlug(rawSlug) : toSlug(title)
+  const baseSlug = rawSlug ? toSlug(rawSlug) : toSlug(title)
+
+  // Ensure slug is unique (skip current post if editing)
+  let slug = baseSlug
+  let attempt = 1
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const { data: existing } = await supabase
+      .from("blog_posts")
+      .select("id")
+      .eq("slug", slug)
+      .maybeSingle()
+    if (!existing || existing.id === postId) break
+    attempt++
+    slug = `${baseSlug}-${attempt}`
+  }
+
   const content = (formData.get("content") as string) || null
   const excerpt = (formData.get("excerpt") as string)?.trim() || null
   const tagsRaw = (formData.get("tags") as string)?.trim()
   const tags = tagsRaw ? tagsRaw.split(",").map((t) => t.trim()).filter(Boolean) : []
   const publish = formData.get("publish") === "true"
+  const cover_image = (formData.get("cover_image") as string)?.trim() || null
 
   if (postId) {
     await supabase
@@ -36,6 +53,7 @@ export async function savePost(formData: FormData, postId?: string) {
         content,
         excerpt,
         tags,
+        cover_image,
         published: publish,
         published_at: publish ? new Date().toISOString() : null,
       })
@@ -51,6 +69,7 @@ export async function savePost(formData: FormData, postId?: string) {
         content,
         excerpt,
         tags,
+        cover_image,
         published: publish,
         published_at: publish ? new Date().toISOString() : null,
       })

@@ -49,17 +49,7 @@ export default async function ProductPage() {
         ))}
       </div>
 
-      <div className="space-y-10">
-        {activeMilestones.length > 0 ? (
-          activeMilestones.map((m) => (
-            <SprintBoard key={m} tasks={allTasks} milestone={m} />
-          ))
-        ) : (
-          <div className="flex h-48 items-center justify-center rounded-xl border border-dashed border-border text-sm text-muted-foreground">
-            No tasks yet — add your first sprint task
-          </div>
-        )}
-      </div>
+      <SprintBoard tasks={allTasks} />
     </div>
   )
 }
